@@ -124,3 +124,7 @@ OPENROUTER_API_KEY="sk-or-v1-..."
 5. Database queries are in `lib/db-queries.ts`
 6. Auth middleware is in `lib/auth.ts`
 
+## Skills
+Available skills are located in the `skills/` directory.
+- **jarif**: General purpose skill enforcing clarification, up-to-date data, and single-task focus. Load with: `skill jarif`
+
