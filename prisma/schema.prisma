@@ -25,6 +25,7 @@ model users {
   id         Int      @id @default(autoincrement())
   username   String   @unique @db.VarChar(255)
   password   String   @db.VarChar(255)
+  apiKey     String?  @db.VarChar(255)
   created_at DateTime @default(now())
   events     events[]
 }

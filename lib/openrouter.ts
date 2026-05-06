@@ -34,10 +34,12 @@ Rules:
 5. If time is provided, include both startDate with date only AND startTime with full datetime
 6. All dates should be in ISO 8601 format`
 
-export async function extractEvents(text: string, model: string): Promise<ExtractedEvent[]> {
-  const apiKey = process.env.OPENROUTER_API_KEY
+export async function extractEvents(text: string, model: string, userApiKey?: string | null): Promise<ExtractedEvent[]> {
+  // Use user's key if provided, otherwise fall back to env variable (default key)
+  const apiKey = userApiKey || process.env.OPENROUTER_API_KEY
+
   if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY is not configured')
+    throw new Error('No API key configured. Please add your OpenRouter API key in Settings.')
   }
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {

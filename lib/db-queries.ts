@@ -94,3 +94,18 @@ export async function deleteEvent(id: number, userId: number): Promise<events> {
     where: { id, user_id: userId },
   })
 }
+
+export async function updateUserApiKey(userId: number, apiKey: string | null): Promise<users> {
+  return prisma.users.update({
+    where: { id: userId },
+    data: { apiKey },
+  })
+}
+
+export async function getUserApiKey(userId: number): Promise<string | null> {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { apiKey: true },
+  })
+  return user?.apiKey || null
+}

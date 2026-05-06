@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
+import { getUserApiKey } from '@/lib/db-queries'
 import { extractEvents } from '@/lib/openrouter'
 
 export async function POST(request: NextRequest) {
@@ -20,7 +21,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Model is required' }, { status: 400 })
     }
 
-    const events = await extractEvents(text, model)
+    // Get user's personal API key (if any), fall back to env variable
+    const userApiKey = await getUserApiKey(user.userId)
+
+    const events = await extractEvents(text, model, userApiKey)
     return NextResponse.json({ events })
   } catch (error) {
     return NextResponse.json(

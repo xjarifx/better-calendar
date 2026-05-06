@@ -125,4 +125,19 @@ export const api = {
     }
     return res.json()
   },
+
+  async getUserProfile() {
+    const res = await apiFetch('/api/user')
+    if (!res.ok) throw new Error('Failed to fetch profile')
+    return res.json()
+  },
+
+  async updateApiKey(apiKey: string | null) {
+    const res = await apiFetch('/api/user', {
+      method: 'PUT',
+      body: JSON.stringify({ apiKey }),
+    })
+    if (!res.ok) throw new Error('Failed to update API key')
+    return res.json()
+  },
 }

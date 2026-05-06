@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
@@ -35,6 +35,8 @@ export default function EventInputPage() {
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState('')
   const [extractedEvents, setExtractedEvents] = useState<ExtractedEvent[]>([])
+  const abortControllerRef = useRef<{ controller: AbortController; id: number } | null>(null)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     if (isLoading) return
@@ -63,6 +65,14 @@ export default function EventInputPage() {
   }
 
   const handleExtract = async () => {
+    // If already extracting, cancel the current request
+    if (extracting && abortControllerRef.current) {
+      abortControllerRef.current.controller.abort()
+      setExtracting(false)
+      setError('Extraction cancelled')
+      return
+    }
+
     if (!text.trim()) {
       setError('Please paste some text to extract events from')
       return
@@ -71,6 +81,14 @@ export default function EventInputPage() {
       setError('Please select an AI model')
       return
     }
+
+    // Increment request ID for this new request
+    const thisRequestId = requestIdRef.current + 1
+    requestIdRef.current = thisRequestId
+
+    // Create AbortController for this request
+    const controller = new AbortController()
+    abortControllerRef.current = { controller, id: thisRequestId }
 
     setExtracting(true)
     setError('')
@@ -81,7 +99,13 @@ export default function EventInputPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, model: selectedModel }),
+        signal: controller.signal,
       })
+
+      // Check if this is still the current request
+      if (abortControllerRef.current?.id !== thisRequestId) {
+        return // Stale request, ignore
+      }
 
       if (!res.ok) {
         const data = await res.json()
@@ -89,15 +113,34 @@ export default function EventInputPage() {
       }
 
       const data = await res.json()
+
+      // Check again if this is still the current request
+      if (abortControllerRef.current?.id !== thisRequestId) {
+        return // Stale request, ignore
+      }
+
       if (data.events?.length === 0) {
         setError('No events found in the text. Try adding more details.')
       } else {
         setExtractedEvents(data.events || [])
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to extract events')
+      // Check if this is still the current request
+      if (abortControllerRef.current?.id !== thisRequestId) {
+        return // Stale request, ignore
+      }
+
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Extraction cancelled')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to extract events')
+      }
     } finally {
-      setExtracting(false)
+      // Only update state if this is still the current request
+      if (abortControllerRef.current?.id === thisRequestId) {
+        setExtracting(false)
+        abortControllerRef.current = null
+      }
     }
   }
 
@@ -161,8 +204,12 @@ export default function EventInputPage() {
                   </select>
                 )}
               </div>
-              <Button onClick={handleExtract} disabled={extracting || !text.trim()}>
-                {extracting ? 'Extracting...' : 'Extract Events'}
+              <Button
+                onClick={handleExtract}
+                disabled={loading || !selectedModel || (!extracting && !text.trim())}
+                variant={extracting ? 'destructive' : 'default'}
+              >
+                {extracting ? 'Cancel' : 'Extract Events'}
               </Button>
               <Button variant="outline" onClick={handleClear}>
                 Clear

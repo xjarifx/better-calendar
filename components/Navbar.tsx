@@ -65,6 +65,9 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-4 border-l pl-6">
             <span className="text-sm text-muted-foreground">{username}</span>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
+              Settings
+            </Button>
             <Button variant="outline" size="sm" onClick={logout}>
               Logout
             </Button>

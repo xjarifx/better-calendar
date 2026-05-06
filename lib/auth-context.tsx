@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 interface AuthContextType {
   isAuthenticated: boolean
   username: string | null
+  hasApiKey: boolean
   logout: () => void
   isLoading: boolean
   refreshAuth: () => Promise<void>
@@ -14,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   username: null,
+  hasApiKey: false,
   logout: () => {},
   isLoading: true,
   refreshAuth: async () => {},
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState<string | null>(null)
+  const [hasApiKey, setHasApiKey] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -35,18 +38,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.authenticated) {
           setIsAuthenticated(true)
           setUsername(data.username)
+
+          // Also get API key status
+          try {
+            const profileRes = await fetch('/api/user')
+            if (profileRes.ok) {
+              const profile = await profileRes.json()
+              setHasApiKey(profile.hasApiKey || false)
+            }
+          } catch {
+            // Ignore profile fetch errors
+          }
         } else {
           setIsAuthenticated(false)
           setUsername(null)
+          setHasApiKey(false)
         }
       } else {
         setIsAuthenticated(false)
         setUsername(null)
+        setHasApiKey(false)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
       setIsAuthenticated(false)
       setUsername(null)
+      setHasApiKey(false)
     } finally {
       setIsLoading(false)
     }
@@ -64,11 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsAuthenticated(false)
     setUsername(null)
+    setHasApiKey(false)
     router.push('/login')
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, username, logout, isLoading, refreshAuth: checkAuth }}>
+    <AuthContext.Provider value={{ isAuthenticated, username, hasApiKey, logout, isLoading, refreshAuth: checkAuth }}>
       {children}
     </AuthContext.Provider>
   )
