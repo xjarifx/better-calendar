@@ -172,18 +172,52 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
-        <Link href="/calendar" className="text-lg font-semibold">
-          Better Calendar
-        </Link>
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="p-2 -mr-2 rounded-lg hover:bg-muted"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </div>
+       {/* Mobile Header */}
+       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
+         {isCalendarPage ? (
+           <>
+             {/* View Tabs for Calendar Page */}
+             <div className="flex items-center gap-1">
+               {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
+                 <button
+                   key={mode}
+                   onClick={() => setViewMode(mode)}
+                   className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                     viewMode === mode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                   }`}
+                 >
+                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                 </button>
+               ))}
+             </div>
+
+             {/* Today Icon + Hamburger */}
+             <div className="flex items-center gap-1">
+               <button onClick={navigateToday} className="p-2 rounded-lg hover:bg-muted" aria-label="Go to Today">
+                 <Calendar className="h-5 w-5" />
+               </button>
+               <button
+                 onClick={() => setMobileOpen(true)}
+                 className="p-2 -mr-2 rounded-lg hover:bg-muted"
+               >
+                 <Menu className="h-5 w-5" />
+               </button>
+             </div>
+           </>
+         ) : (
+           <>
+             <Link href="/calendar" className="text-lg font-semibold">
+               Better Calendar
+             </Link>
+             <button
+               onClick={() => setMobileOpen(true)}
+               className="p-2 -mr-2 rounded-lg hover:bg-muted"
+             >
+               <Menu className="h-5 w-5" />
+             </button>
+           </>
+         )}
+       </div>
 
       {/* Mobile Bottom Sheet Navigation */}
       <BottomSheet
@@ -209,49 +243,22 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* Calendar Controls for mobile */}
-        {isCalendarPage && (
-          <div className="mt-4 pt-4 border-t border-border space-y-3">
-            <div className="flex gap-2">
-              {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => {
-                    setViewMode(mode)
-                    setMobileOpen(false)
-                  }}
-                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                    viewMode === mode
-                      ? 'bg-muted font-medium'
-                      : 'border border-border hover:bg-muted/50'
-                  }`}
-                >
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => {
-                navigateToday()
-                setMobileOpen(false)
-              }}
-              className="w-full py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
-            >
-              Today
-            </button>
-            <Button
-              size="sm"
-              onClick={() => {
-                router.push('/events/new')
-                setMobileOpen(false)
-              }}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Event
-            </Button>
-          </div>
-        )}
+         {/* Add Event for mobile - only show on calendar page */}
+         {isCalendarPage && (
+           <div className="mt-4 pt-4 border-t border-border">
+             <Button
+               size="sm"
+               onClick={() => {
+                 router.push('/events/new')
+                 setMobileOpen(false)
+               }}
+               className="w-full"
+             >
+               <Plus className="h-4 w-4 mr-2" />
+               Add Event
+             </Button>
+           </div>
+         )}
 
         <div className="mt-6 pt-6 border-t border-border">
           <div className="flex items-center gap-3 mb-4">
