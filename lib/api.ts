@@ -1,36 +1,16 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('token')
-}
-
-export function setAuth(token: string, userId: number, username: string) {
-  localStorage.setItem('token', token)
-  localStorage.setItem('userId', String(userId))
-  localStorage.setItem('username', username)
-}
-
-export function clearAuth() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('username')
-}
-
 export async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = getToken()
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  }
-  if (token) {
-    ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include',
+  })
 
   if (res.status === 401) {
-    clearAuth()
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
@@ -38,6 +18,22 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   }
 
   return res
+}
+
+// Server-side cookie getter (for use in Server Components/Actions)
+export function getTokenFromCookie(request: Request): string | null {
+  const cookieHeader = request.headers.get('cookie')
+  if (!cookieHeader) return null
+  const cookies = parseCookieString(cookieHeader)
+  return cookies['token'] || null
+}
+
+function parseCookieString(cookieString: string): Record<string, string> {
+  return cookieString.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=')
+    if (key) acc[key] = decodeURIComponent(value || '')
+    return acc
+  }, {} as Record<string, string>)
 }
 
 export const api = {
@@ -110,5 +106,23 @@ export const api = {
       throw new Error(data.error || 'Failed to delete event')
     }
     return true
+  },
+
+  async getFreeModels() {
+    const res = await apiFetch('/api/ai/models')
+    if (!res.ok) throw new Error('Failed to fetch models')
+    return res.json()
+  },
+
+  async extractEvents(text: string, model: string) {
+    const res = await apiFetch('/api/ai/extract', {
+      method: 'POST',
+      body: JSON.stringify({ text, model }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to extract events')
+    }
+    return res.json()
   },
 }

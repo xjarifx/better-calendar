@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/alert'
 
 export default function EventDetailPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
@@ -22,12 +22,13 @@ export default function EventDetailPage() {
   const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
+    if (isLoading) return
     if (!isAuthenticated) {
       router.push('/login')
       return
     }
     loadEvent()
-  }, [isAuthenticated, id, router])
+  }, [isAuthenticated, isLoading, id, router])
 
   const loadEvent = async () => {
     try {

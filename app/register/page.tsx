@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { api, setAuth } from '@/lib/api'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
 
 export default function RegisterPage() {
+  const { refreshAuth } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,7 +25,8 @@ export default function RegisterPage() {
 
     try {
       const data = await api.register(username, password)
-      setAuth(data.token, data.id, data.username)
+      // Server sets cookies, verify auth state
+      await refreshAuth()
       router.push('/calendar')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')

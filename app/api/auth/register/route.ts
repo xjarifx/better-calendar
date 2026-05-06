@@ -24,11 +24,36 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       id: user.id,
       username: user.username,
       token,
     }, { status: 201 })
+
+    // Set cookies for persistent auth
+    response.cookies.set('token', token, {
+      httpOnly: false, // Allow JavaScript access for client-side
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+    response.cookies.set('username', user.username, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
+    response.cookies.set('userId', String(user.id), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json({ error: 'Registration failed', details: error instanceof Error ? error.message : String(error) }, { status: 500 })

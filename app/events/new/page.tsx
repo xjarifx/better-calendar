@@ -6,9 +6,10 @@ import Navbar from '@/components/Navbar'
 import EventForm from '@/components/EventForm'
 
 export default function NewEventPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
+  if (isLoading) return null
   if (!isAuthenticated) {
     router.push('/login')
     return null

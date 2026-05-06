@@ -48,19 +48,20 @@ const eventStyleGetter = (event: CalendarEvent) => {
 }
 
 export default function CalendarPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (isLoading) return
     if (!isAuthenticated) {
       router.push('/login')
       return
     }
     loadEvents()
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
   const loadEvents = async () => {
     try {

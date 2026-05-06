@@ -21,7 +21,7 @@ interface Event {
 }
 
 export default function EventsPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,12 +29,13 @@ export default function EventsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
+    if (isLoading) return
     if (!isAuthenticated) {
       router.push('/login')
       return
     }
     loadEvents()
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
   const loadEvents = async () => {
     try {

@@ -1,21 +1,43 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import jwt from 'jsonwebtoken'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value || ''
-
-  // For client-side auth, we rely on localStorage
-  // This middleware handles server-side redirects for auth pages
+  const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
   // Public paths that don't require auth
-  const publicPaths = ['/login', '/register', '/api', '/_next', '/favicon']
-  const isPublicPath = publicPaths.some(p => pathname.startsWith(p))
+  const publicPaths = ['/login', '/register', '/api-docs']
+  const isPublicPath = publicPaths.some(p => pathname === p)
 
-  // We'll handle auth check on client side for SPA behavior
+  // API routes handle their own auth via getAuthUser
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
+  // If user has valid token and tries to access login/register, redirect to calendar
+  if (token && (pathname === '/login' || pathname === '/register')) {
+    try {
+      jwt.verify(token, process.env.JWT_SECRET || 'secret')
+      return NextResponse.redirect(new URL('/calendar', request.url))
+    } catch {
+      // Invalid token, clear cookies and allow access to login page
+      const response = NextResponse.next()
+      response.cookies.delete('token')
+      response.cookies.delete('userId')
+      response.cookies.delete('username')
+      return response
+    }
+  }
+
+  // If no token and trying to access protected route, redirect to login
+  if (!token && !isPublicPath) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
