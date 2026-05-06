@@ -31,8 +31,15 @@ export default function Sidebar() {
 
   if (!isAuthenticated) return null
 
-  const isActive = (href: string) =>
-    pathname === href || pathname?.startsWith(href + '/')
+  // Find all nav items matching current path (exact or child route)
+  const matchingItems = navItems.filter(item => 
+    pathname === item.href || pathname?.startsWith(item.href + '/')
+  );
+  // Select the most specific match (longest href)
+  const activeHref = matchingItems.length > 0 
+    ? matchingItems.sort((a, b) => b.href.length - a.href.length)[0].href 
+    : null;
+  const isActive = (href: string) => href === activeHref;
 
   const handleNavClick = () => {
     setMobileOpen(false)
