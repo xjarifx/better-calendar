@@ -4,6 +4,8 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import EventForm from '@/components/EventForm'
 
+import { ArrowLeft } from 'lucide-react'
+
 export default function NewEventPage() {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
@@ -20,9 +22,10 @@ export default function NewEventPage() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.push('/calendar')}
-            className="text-muted-foreground hover:text-foreground text-sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            ← Calendar
+            <ArrowLeft className="h-4 w-4" />
+            Calendar
           </button>
           <h1 className="text-xl font-semibold">New Event</h1>
         </div>

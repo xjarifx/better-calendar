@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import EventForm from '@/components/EventForm'
 import { Button } from '@/components/ui/button'
 import { format, parseISO } from 'date-fns'
+import { ArrowLeft } from 'lucide-react'
 
 export default function EventDetailPage() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -81,9 +82,10 @@ export default function EventDetailPage() {
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => setMode('view')}
-              className="text-muted-foreground hover:text-foreground text-sm"
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
             >
-              ← Back
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </button>
             <h1 className="text-xl font-semibold">Edit Event</h1>
           </div>
@@ -113,9 +115,10 @@ export default function EventDetailPage() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.push('/calendar')}
-            className="text-muted-foreground hover:text-foreground text-sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            ← Calendar
+            <ArrowLeft className="h-4 w-4" />
+            Calendar
           </button>
         </div>
 

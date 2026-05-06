@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert } from '@/components/ui/alert'
+import { ArrowLeft } from 'lucide-react'
 
 export default function SettingsPage() {
   const { isAuthenticated, isLoading, hasApiKey } = useAuth()
@@ -97,9 +98,10 @@ export default function SettingsPage() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.push('/calendar')}
-            className="text-muted-foreground hover:text-foreground text-sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            ← Calendar
+            <ArrowLeft className="h-4 w-4" />
+            Calendar
           </button>
           <h1 className="text-xl font-semibold">Settings</h1>
         </div>

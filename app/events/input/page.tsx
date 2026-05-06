@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import ExtractedEvents from '@/components/ExtractedEvents'
-import { Sparkles, ChevronDown } from 'lucide-react'
+import { Sparkles, ChevronDown, ArrowLeft } from 'lucide-react'
 
 // Recommended models configuration - easy to update for future models
 const RECOMMENDED_MODEL_IDS = ['openai/gpt-oss-120b', 'nvidia/nemotron-3-super']
@@ -165,9 +165,10 @@ export default function EventInputPage() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.push('/calendar')}
-            className="text-muted-foreground hover:text-foreground text-sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            ← Calendar
+            <ArrowLeft className="h-4 w-4" />
+            Calendar
           </button>
           <h1 className="text-xl font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
