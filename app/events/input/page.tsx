@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import ExtractedEvents from '@/components/ExtractedEvents'
 
+// Recommended models configuration - easy to update for future models
+const RECOMMENDED_MODEL_IDS = ['openai/gpt-oss-120b', 'nvidia/nemotron-3-super']
+const HARDCODED_RECOMMENDED_MODELS: FreeModel[] = [
+  { id: 'openai/gpt-oss-120b', name: 'OpenAI: gpt-oss-120b', context: '131k' },
+  { id: 'nvidia/nemotron-3-super', name: 'NVIDIA: Nemotron 3 Super', context: '128k' },
+]
+
 interface FreeModel {
   id: string
   name: string
@@ -37,6 +44,8 @@ export default function EventInputPage() {
   const [extractedEvents, setExtractedEvents] = useState<ExtractedEvent[]>([])
   const abortControllerRef = useRef<{ controller: AbortController; id: number } | null>(null)
   const requestIdRef = useRef(0)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isLoading) return
@@ -47,15 +56,27 @@ export default function EventInputPage() {
     loadModels()
   }, [isAuthenticated, isLoading, router])
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const loadModels = async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/ai/models')
       if (!res.ok) throw new Error('Failed to load models')
       const data = await res.json()
-      setModels(data.models || [])
-      if (data.models?.length > 0) {
-        setSelectedModel(data.models[0].id)
+      const apiModels = data.models || []
+      const allModels = [...HARDCODED_RECOMMENDED_MODELS, ...apiModels]
+      setModels(allModels)
+      if (allModels.length > 0) {
+        setSelectedModel(allModels[0].id)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load models')
@@ -191,17 +212,56 @@ export default function EventInputPage() {
                 {loading ? (
                   <div className="text-sm text-muted-foreground">Loading models...</div>
                 ) : (
-                  <select
-                    className="w-full px-3 py-2 border rounded-md bg-background text-sm"
-                    value={selectedModel}
-                    onChange={e => setSelectedModel(e.target.value)}
-                  >
-                    {models.map(model => (
-                      <option key={model.id} value={model.id}>
-                        {model.name} ({model.context} context)
-                      </option>
-                    ))}
-                  </select>
+                  <div ref={dropdownRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm text-left flex items-center justify-between"
+                    >
+                      <span>
+                        {models.find(m => m.id === selectedModel)?.name || 'Select a model'}
+                      </span>
+                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                          Recommended
+                        </div>
+                        {models
+                          .filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
+                          .map(model => (
+                            <div
+                              key={model.id}
+                              onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
+                            >
+                              {model.name} ({model.context} context)
+                            </div>
+                          ))
+                        }
+
+                        <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 border-t border-input">
+                          All AI Models
+                        </div>
+                        {models
+                          .filter(m => !RECOMMENDED_MODEL_IDS.includes(m.id))
+                          .map(model => (
+                            <div
+                              key={model.id}
+                              onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
+                            >
+                              {model.name} ({model.context} context)
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <Button
