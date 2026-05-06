@@ -33,6 +33,7 @@ better-calender/
 │   └── migrations/                # Database migrations
 ├── docs/                          # Project documentation
 │   ├── DATABASE.md                # Database schema details
+│   ├── REST_API_REFERENCE.md      # Complete REST API documentation
 │   ├── TECH_STACK.md              # Technology stack
 │   ├── PROJECT_SCOPE.md           # MVP scope
 │   ├── UI_UX_FLOW.md              # UI/UX flow
@@ -74,25 +75,6 @@ model Event {
   @@map("events")
 }
 ```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-  - Body: `{ "username": "string", "password": "string" }`
-  - Returns: `{ id, username, token }`
-
-- `POST /api/auth/login` - Login user
-  - Body: `{ "username": "string", "password": "string" }`
-  - Returns: `{ id, username, token }`
-
-### Events (requires Authorization header: `Bearer <token>`)
-- `GET /api/events` - List all events for authenticated user
-- `POST /api/events` - Create new event
-  - Body: `{ "title": "string", "startDate": "ISO date", "startTime?": "ISO datetime", "endDate?": "ISO date", "endTime?": "ISO datetime", "location?": "string", "description?": "string" }`
-- `GET /api/events/[id]` - Get single event
-- `PUT /api/events/[id]` - Update event
-- `DELETE /api/events/[id]` - Delete event
 
 ## Environment Variables (.env)
 ```
