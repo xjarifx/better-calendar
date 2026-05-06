@@ -27,7 +27,7 @@ import {
   getDay,
   isSameMonth,
 } from 'date-fns'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
 interface CalendarEvent {
   id: number
@@ -223,6 +223,15 @@ export default function CalendarPage() {
             {deleteError}
           </div>
         )}
+
+        {/* Mobile FAB for adding events */}
+        <button
+          onClick={() => router.push('/events/new')}
+          className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity z-30"
+          aria-label="Add Event"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
       </main>
 
       {/* Event Detail Bottom Sheet */}
@@ -418,7 +427,6 @@ function MonthView({
                    <EventCard
                      key={event.id}
                      event={event}
-                     onClick={() => onEventClick(event)}
                      ultraCompact
                    />
                  ))}
@@ -443,7 +451,7 @@ function EventCard({
   ultraCompact = false,
 }: {
   event: CalendarEvent
-  onClick: () => void
+  onClick?: () => void
   compact?: boolean
   ultraCompact?: boolean
 }) {
@@ -451,16 +459,18 @@ function EventCard({
 
   return (
     <div
-      onClick={(e) => {
+      onClick={onClick ? (e) => {
         e.stopPropagation()
         onClick()
-      }}
-      className={`rounded cursor-pointer hover:opacity-90 transition-opacity ${
+      } : undefined}
+      className={`rounded hover:opacity-90 transition-opacity border-l-[3px] ${
+        onClick ? 'cursor-pointer' : 'cursor-default'
+      } ${
         ultraCompact ? 'p-0.5' : compact ? 'p-1' : 'p-3'
-      } ${!ultraCompact ? 'border-l-[3px]' : ''}`}
+      }`}
       style={{
         backgroundColor: eventColor + '30',
-        ...(ultraCompact ? {} : { borderLeftColor: eventColor }),
+        borderLeftColor: eventColor,
       }}
       title={event.title}
     >
