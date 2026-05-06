@@ -454,11 +454,11 @@ function MonthView({
                 isCurrentDay ? 'bg-primary/20' : ''
               } ${!isCurrentMonth ? 'opacity-40' : ''}`}
             >
-              <div className={`text-xs font-medium mb-1 ${
-                isCurrentDay ? 'text-primary' : 'text-foreground'
-              }`}>
-                {format(day, 'd')}
-              </div>
+              <div className={`text-xs font-medium mb-1 text-center ${
+                 isCurrentDay ? 'text-primary' : 'text-foreground'
+               }`}>
+                 {format(day, 'd')}
+               </div>
               <div className="space-y-0.5">
                 {dayEvents.slice(0, 3).map(event => (
                   <div
