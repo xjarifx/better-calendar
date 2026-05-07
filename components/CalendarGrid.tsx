@@ -137,12 +137,19 @@ function DayCell({
   const overflowCount = Math.max(events.length - visibleEvents.length, 0);
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
-        "group relative flex min-h-[140px] flex-col border border-border/80 p-2 text-left transition-all duration-200 hover:bg-muted/20",
+        "group relative flex min-h-[140px] flex-col border border-border/80 p-2 text-left transition-all duration-200 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         isOutsideMonth && "bg-muted/10 text-muted-foreground",
         isOver && "bg-primary/10 ring-1 ring-primary/40",
       )}
@@ -178,7 +185,7 @@ function DayCell({
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
