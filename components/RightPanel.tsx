@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
 import { useAuth } from "@/lib/auth-context";
 import ExtractedEvents, { ExtractedEvent } from "./ExtractedEvents";
