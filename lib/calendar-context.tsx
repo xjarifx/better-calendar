@@ -11,7 +11,7 @@ import {
 import type { events as Event } from "@prisma/client";
 import { api } from "@/lib/api";
 
-export type RightPanelMode = "day-view" | "event-details" | "extracted-events";
+export type RightPanelMode = "day-view" | "event-details" | "extracted-events" | "empty";
 
 interface CalendarContextType {
   selectedDate: Date | null;

@@ -13,7 +13,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "./ui/dialog";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, X } from "lucide-react";
 
 function formatDateTimeInput(value: string | Date | null | undefined) {
   if (!value) return "";
@@ -66,6 +66,8 @@ export default function RightPanel() {
   return (
     <aside className="fixed right-0 top-0 h-full z-30 w-[400px] border-l border-border bg-right-panel-bg flex flex-col">
       <div className="flex-1 overflow-y-auto p-4">
+        {rightPanelMode === "empty" && <div />}
+
         {rightPanelMode === "extracted-events" && (
           <div>
             <h3 className="text-lg font-semibold mb-2">Extracted Events</h3>
@@ -85,9 +87,17 @@ export default function RightPanel() {
 
         {rightPanelMode === "day-view" && (
           <div>
-            <h3 className="text-lg font-semibold mb-2">
-              {selectedDate ? new Date(selectedDate).toDateString() : "Day View"}
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">
+                {selectedDate ? new Date(selectedDate).toDateString() : "Day View"}
+              </h3>
+              <button
+                onClick={() => setRightPanelMode("empty")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <div className="space-y-2">
               {(events || [])
                 .filter((e) => {
@@ -122,7 +132,18 @@ export default function RightPanel() {
               <ArrowLeft className="h-4 w-4" />
               Back to list
             </button>
-            <h3 className="text-lg font-semibold mb-2">{selectedEvent.title}</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">{selectedEvent.title}</h3>
+              <button
+                onClick={() => {
+                  setSelectedEvent(null);
+                  setRightPanelMode("empty");
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <div className="text-sm text-muted-foreground mb-3">
               {selectedEvent.start_date &&
                 new Date(selectedEvent.start_date).toDateString()}
