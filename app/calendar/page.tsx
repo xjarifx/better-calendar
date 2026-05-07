@@ -483,7 +483,7 @@ function WeekView({
       </div>
 
       {allDayEvents.length > 0 && (
-        <div className="border border-gray-300 dark:border-gray-600 rounded-t-lg p-2 bg-muted/30 mb-1">
+        <div className="border border-gray-300 dark:border-gray-600 border-b-0 rounded-t-lg p-2 bg-muted/30">
           <div className="flex">
             <div className="w-16 flex-shrink-0 text-xs font-medium text-muted-foreground pt-1">All Day</div>
             <div className="flex-1 grid grid-cols-7 gap-1">
@@ -509,7 +509,7 @@ function WeekView({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-b-lg">
+      <div className="flex-1 overflow-y-auto border border-gray-300 dark:border-gray-600 border-t-0 rounded-b-lg">
         <div className="flex">
           <div className="w-16 flex-shrink-0">
             {Array.from({ length: 24 }, (_, i) => (
