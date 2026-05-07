@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useCalendar } from "@/lib/calendar-context";
+import { useAuth } from "@/lib/auth-context";
 import ExtractedEvents, { ExtractedEvent } from "./ExtractedEvents";
 import EventForm from "./EventForm";
 import EventCard from "./EventCard";
@@ -10,6 +11,7 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function RightPanel() {
+  const { isAuthenticated } = useAuth();
   const {
     rightPanelMode,
     selectedDate,
@@ -23,6 +25,8 @@ export default function RightPanel() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  if (!isAuthenticated) return null;
 
   useEffect(() => {
     // load events once for day-view filtering

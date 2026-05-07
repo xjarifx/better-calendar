@@ -277,10 +277,16 @@ Completed in `lib/calendar-context.tsx`.
 
 **Acceptance Criteria**:
 
-- [ ] 3 panels render side by side
-- [ ] Collapsing sidebar adjusts main margin smoothly
-- [ ] Right panel renders correct state based on context
-- [ ] No mobile header spacing
+- [x] 3 panels render side by side
+- [x] Collapsing sidebar adjusts main margin smoothly
+- [x] Right panel renders correct state based on context
+- [x] No mobile header spacing
+
+**Implementation Notes**:
+
+- `app/layout.tsx` now renders the fixed `Sidebar`, `main`, and `RightPanel` shell in a single desktop layout.
+- The main panel uses a `--sidebar-width` CSS variable that switches from `16rem` to `4rem` when the sidebar is collapsed, so the left offset animates smoothly without extra state.
+- The old `pt-[64px] lg:pt-0` spacing is removed from the root layout.
 
 **Reference Files**:
 
@@ -318,12 +324,19 @@ Completed in `lib/calendar-context.tsx`.
 
 **Acceptance Criteria**:
 
-- [ ] Custom month grid renders correctly for any month
-- [ ] Events display as colored bars in day cells
-- [ ] Drag and drop moves events between days (updates via API)
-- [ ] Day/event click updates right panel state
-- [ ] FAB button is always visible
+- [x] Custom month grid renders correctly for any month
+- [x] Events display as colored bars in day cells
+- [x] Drag and drop moves events between days (updates via API)
+- [x] Day/event click updates right panel state
+- [x] FAB button is always visible
 - [ ] Search icon triggers SearchModal (T07)
+
+**Implementation Notes**:
+
+- `components/CalendarGrid.tsx` is the new client-side month grid with a custom 7-column calendar, header controls, event bars, and drag-and-drop day moves using `@dnd-kit/core` plus `@dnd-kit/sortable`.
+- The calendar route now renders `CalendarGrid` after auth gating, so the old week/day/month implementation is no longer the active UI.
+- The FAB stays fixed against the calendar panel and points to `/events/new`.
+- The header search button is exposed as a callback prop so T07 can attach the modal without changing the grid layout.
 
 **Reference Files**:
 
@@ -357,10 +370,16 @@ Completed in `lib/calendar-context.tsx`.
 
 **Acceptance Criteria**:
 
-- [ ] Modal opens/closes correctly from calendar header
-- [ ] Search filters events by title in real-time
-- [ ] Clicking result opens event in right panel
-- [ ] No console errors on search
+- [x] Modal opens/closes correctly from calendar header
+- [x] Search filters events by title in real-time
+- [x] Clicking result opens event in right panel
+- [x] No console errors on search
+
+**Implementation Notes**:
+
+- `components/SearchModal.tsx` uses the existing Shadcn dialog primitive with a centered blurred overlay and title-only filtering.
+- The modal loads events on open, filters them in memory as the user types, and writes the chosen event into calendar context before closing.
+- `components/CalendarGrid.tsx` owns the search button state so the modal is reachable directly from the month header.
 
 **Reference Files**:
 

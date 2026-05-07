@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { CalendarProvider } from "@/lib/calendar-context";
 import Sidebar from "@/components/Sidebar";
+import RightPanel from "@/components/RightPanel";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -22,17 +23,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex">
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full bg-background text-foreground antialiased">
         <AuthProvider>
           <CalendarProvider>
-            <Sidebar />
-            <main className="flex-1 lg:ml-64 min-h-screen bg-background pt-[64px] lg:pt-0">
-              {children}
-            </main>
+            <div className="relative min-h-screen w-full [--sidebar-width:16rem] [&:has(.sidebar-collapsed)]:[--sidebar-width:4rem]">
+              <Sidebar />
+              <main className="min-h-screen bg-background ml-[var(--sidebar-width)] mr-[400px] transition-all duration-300">
+                {children}
+              </main>
+              <RightPanel />
+            </div>
           </CalendarProvider>
         </AuthProvider>
       </body>
