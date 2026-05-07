@@ -8,7 +8,13 @@ import ExtractedEvents from '@/components/ExtractedEvents'
 import { Sparkles, ChevronDown, ArrowLeft } from 'lucide-react'
 import { InlineLoading } from '@/components/ui/loading'
 
-// Recommended models configuration - easy to update for future models
+const LS_KEY_TEXT = 'ai-input-text'
+const LS_KEY_EVENTS = 'ai-input-events'
+const LS_KEY_EXTRACTING = 'ai-input-extracting'
+const LS_KEY_REQUEST_ID = 'ai-input-request-id'
+
+let activeController: AbortController | null = null
+
 const RECOMMENDED_MODEL_IDS = ['openai/gpt-oss-120b', 'nvidia/nemotron-3-super']
 const HARDCODED_RECOMMENDED_MODELS: FreeModel[] = [
   { id: 'openai/gpt-oss-120b', name: 'OpenAI: gpt-oss-120b', context: '131k' },
@@ -42,10 +48,52 @@ export default function EventInputPage() {
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState('')
   const [extractedEvents, setExtractedEvents] = useState<ExtractedEvent[]>([])
-  const abortControllerRef = useRef<{ controller: AbortController; id: number } | null>(null)
   const requestIdRef = useRef(0)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const savedText = localStorage.getItem(LS_KEY_TEXT)
+    if (savedText) setText(savedText)
+
+    const savedEvents = localStorage.getItem(LS_KEY_EVENTS)
+    if (savedEvents) {
+      try {
+        setExtractedEvents(JSON.parse(savedEvents))
+      } catch { /* ignore */ }
+    }
+
+    const savedRequestId = localStorage.getItem(LS_KEY_REQUEST_ID)
+    if (savedRequestId) {
+      requestIdRef.current = parseInt(savedRequestId, 10) || 0
+    }
+
+    if (localStorage.getItem(LS_KEY_EXTRACTING) === 'true') {
+      const pollId = setInterval(() => {
+        if (localStorage.getItem(LS_KEY_EXTRACTING) !== 'true') {
+          const events = localStorage.getItem(LS_KEY_EVENTS)
+          if (events) {
+            try { setExtractedEvents(JSON.parse(events)) } catch { /* ignore */ }
+          }
+          clearInterval(pollId)
+        }
+      }, 400)
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollId)
+        localStorage.setItem(LS_KEY_EXTRACTING, 'false')
+      }, 10000)
+      return () => {
+        clearInterval(pollId)
+        clearTimeout(timeoutId)
+      }
+    } else {
+      localStorage.setItem(LS_KEY_EXTRACTING, 'false')
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEY_TEXT, text)
+  }, [text])
 
   useEffect(() => {
     if (isLoading) return
@@ -85,10 +133,15 @@ export default function EventInputPage() {
     }
   }
 
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
   const handleExtract = async () => {
-    if (extracting && abortControllerRef.current) {
-      abortControllerRef.current.controller.abort()
+    if (extracting && activeController) {
+      activeController.abort()
+      activeController = null
       setExtracting(false)
+      localStorage.setItem(LS_KEY_EXTRACTING, 'false')
       setError('Extraction cancelled')
       return
     }
@@ -104,11 +157,15 @@ export default function EventInputPage() {
 
     const thisRequestId = requestIdRef.current + 1
     requestIdRef.current = thisRequestId
+    localStorage.setItem(LS_KEY_REQUEST_ID, String(thisRequestId))
 
-    const controller = new AbortController()
-    abortControllerRef.current = { controller, id: thisRequestId }
+    if (activeController) {
+      activeController.abort()
+    }
+    activeController = new AbortController()
 
     setExtracting(true)
+    localStorage.setItem(LS_KEY_EXTRACTING, 'true')
     setError('')
     setExtractedEvents([])
 
@@ -117,10 +174,10 @@ export default function EventInputPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, model: selectedModel }),
-        signal: controller.signal,
+        signal: activeController.signal,
       })
 
-      if (abortControllerRef.current?.id !== thisRequestId) return
+      if (localStorage.getItem(LS_KEY_REQUEST_ID) !== String(thisRequestId)) return
 
       if (!res.ok) {
         const data = await res.json()
@@ -129,25 +186,30 @@ export default function EventInputPage() {
 
       const data = await res.json()
 
-      if (abortControllerRef.current?.id !== thisRequestId) return
+      if (localStorage.getItem(LS_KEY_REQUEST_ID) !== String(thisRequestId)) return
 
       if (data.events?.length === 0) {
         setError('No events found in the text. Try adding more details.')
+        localStorage.removeItem(LS_KEY_EVENTS)
       } else {
-        setExtractedEvents(data.events || [])
+        const events = data.events || []
+        setExtractedEvents(events)
+        localStorage.setItem(LS_KEY_EVENTS, JSON.stringify(events))
       }
     } catch (err) {
-      if (abortControllerRef.current?.id !== thisRequestId) return
+      if (localStorage.getItem(LS_KEY_REQUEST_ID) !== String(thisRequestId)) return
 
       if (err instanceof DOMException && err.name === 'AbortError') {
         setError('Extraction cancelled')
       } else {
         setError(err instanceof Error ? err.message : 'Failed to extract events')
       }
+      localStorage.removeItem(LS_KEY_EVENTS)
     } finally {
-      if (abortControllerRef.current?.id === thisRequestId) {
+      if (localStorage.getItem(LS_KEY_REQUEST_ID) === String(thisRequestId)) {
         setExtracting(false)
-        abortControllerRef.current = null
+        localStorage.setItem(LS_KEY_EXTRACTING, 'false')
+        activeController = null
       }
     }
   }
@@ -156,49 +218,61 @@ export default function EventInputPage() {
     setText('')
     setExtractedEvents([])
     setError('')
+    localStorage.removeItem(LS_KEY_TEXT)
+    localStorage.removeItem(LS_KEY_EVENTS)
+    localStorage.setItem(LS_KEY_EXTRACTING, 'false')
   }
 
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const handleCancelEvents = () => {
+    setExtractedEvents([])
+    setError('')
+    localStorage.removeItem(LS_KEY_EVENTS)
+    localStorage.setItem(LS_KEY_EXTRACTING, 'false')
+    if (activeController) {
+      activeController.abort()
+      activeController = null
+    }
+  }
 
   const handleSaveAllEvents = async () => {
-    const invalid = extractedEvents.some((e) => !e.title || !e.startDate);
+    const invalid = extractedEvents.some((e) => !e.title || !e.startDate)
     if (invalid) {
-      setSaveError('All events must have a title and start date');
-      return;
+      setSaveError('All events must have a title and start date')
+      return
     }
-    setSaving(true);
-    setSaveError('');
+    setSaving(true)
+    setSaveError('')
     for (const event of extractedEvents) {
       try {
         const eventData: Record<string, unknown> = {
           title: event.title,
           startDate: event.startDate,
-        };
-        if (event.startTime) eventData.startTime = event.startTime;
-        if (event.endDate) eventData.endDate = event.endDate;
-        if (event.endTime) eventData.endTime = event.endTime;
-        if (event.location) eventData.location = event.location;
-        if (event.description) eventData.description = event.description;
+        }
+        if (event.startTime) eventData.startTime = event.startTime
+        if (event.endDate) eventData.endDate = event.endDate
+        if (event.endTime) eventData.endTime = event.endTime
+        if (event.location) eventData.location = event.location
+        if (event.description) eventData.description = event.description
         const res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(eventData),
-        });
+        })
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create event');
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to create event')
         }
       } catch (err) {
         setSaveError(
           `Failed to save "${event.title}": ${err instanceof Error ? err.message : 'Unknown error'}`,
-        );
-        setSaving(false);
-        return;
+        )
+        setSaving(false)
+        return
       }
     }
-    router.push('/calendar');
-  };
+    localStorage.removeItem(LS_KEY_EVENTS)
+    router.push('/calendar')
+  }
 
   if (!isAuthenticated) return null
 
@@ -326,7 +400,7 @@ export default function EventInputPage() {
               >
                 {saving ? "Saving..." : `Save All ${extractedEvents.length} Event(s)`}
               </Button>
-              <Button variant="outline" onClick={() => setExtractedEvents([])} className="h-10 rounded-xl">
+              <Button variant="outline" onClick={handleCancelEvents} className="h-10 rounded-xl">
                 Cancel
               </Button>
             </div>
@@ -335,7 +409,7 @@ export default function EventInputPage() {
           {extractedEvents.length > 0 && (
             <ExtractedEvents
               events={extractedEvents}
-              onClear={() => setExtractedEvents([])}
+              onClear={handleCancelEvents}
               hideActionBar
             />
           )}
