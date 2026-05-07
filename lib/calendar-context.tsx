@@ -1,54 +1,65 @@
-'use client'
+"use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
+import type { events as Event } from "@prisma/client";
 
-export type ViewMode = 'day' | 'week' | 'month'
+export type RightPanelMode =
+  | "ai-input"
+  | "day-view"
+  | "event-details"
+  | "extracted-events";
 
 interface CalendarContextType {
-  viewMode: ViewMode
-  setViewMode: (mode: ViewMode) => void
-  currentDate: Date
-  setCurrentDate: (date: Date) => void
-  navigateToday: () => void
-  firstDayOfWeek: number
-  setFirstDayOfWeek: (day: number) => void
+  selectedDate: Date | null;
+  setSelectedDate: (date: Date | null) => void;
+  selectedEvent: Event | null;
+  setSelectedEvent: (event: Event | null) => void;
+  rightPanelMode: RightPanelMode;
+  setRightPanelMode: (mode: RightPanelMode) => void;
+  navigateToday: () => void;
 }
 
-const CalendarContext = createContext<CalendarContextType | undefined>(undefined)
+const CalendarContext = createContext<CalendarContextType | undefined>(
+  undefined,
+);
 
 export function CalendarProvider({ children }: { children: ReactNode }) {
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [firstDayOfWeek, setFirstDayOfWeek] = useState(0)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [rightPanelMode, setRightPanelMode] =
+    useState<RightPanelMode>("ai-input");
 
   const navigateToday = useCallback(() => {
-    setCurrentDate(new Date())
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(data => {
-        if (data.firstDayOfWeek !== undefined) {
-          setFirstDayOfWeek(data.firstDayOfWeek)
-        }
-      })
-      .catch(() => {})
-  }, [])
+    setSelectedDate(new Date());
+  }, []);
 
   return (
     <CalendarContext.Provider
-      value={{ viewMode, setViewMode, currentDate, setCurrentDate, navigateToday, firstDayOfWeek, setFirstDayOfWeek }}
+      value={{
+        selectedDate,
+        setSelectedDate,
+        selectedEvent,
+        setSelectedEvent,
+        rightPanelMode,
+        setRightPanelMode,
+        navigateToday,
+      }}
     >
       {children}
     </CalendarContext.Provider>
-  )
+  );
 }
 
 export function useCalendar() {
-  const context = useContext(CalendarContext)
+  const context = useContext(CalendarContext);
   if (!context) {
-    throw new Error('useCalendar must be used within CalendarProvider')
+    throw new Error("useCalendar must be used within CalendarProvider");
   }
-  return context
+  return context;
 }

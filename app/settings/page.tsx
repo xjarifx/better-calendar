@@ -1,175 +1,183 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
-import { useCalendar } from '@/lib/calendar-context'
-import { api } from '@/lib/api'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { PageLoading } from '@/components/ui/loading'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PageLoading } from "@/components/ui/loading";
 
 function updateTokenCookie(token: string) {
-  document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+  document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
 }
 
 export default function SettingsPage() {
-  const { isAuthenticated, isLoading, hasApiKey, refreshAuth } = useAuth()
-  const { setFirstDayOfWeek: setContextFirstDayOfWeek } = useCalendar()
-  const router = useRouter()
+  const { isAuthenticated, isLoading, hasApiKey, refreshAuth } = useAuth();
+  const router = useRouter();
 
-  const [apiKey, setApiKey] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const [timeFormat, setTimeFormat] = useState('12h')
-  const [firstDayOfWeek, setFirstDayOfWeek] = useState(0)
+  const [timeFormat, setTimeFormat] = useState("12h");
+  const [firstDayOfWeek, setFirstDayOfWeek] = useState(0);
 
-  const [newUsername, setNewUsername] = useState('')
-  const [usernamePassword, setUsernamePassword] = useState('')
-  const [usernameSaving, setUsernameSaving] = useState(false)
+  const [newUsername, setNewUsername] = useState("");
+  const [usernamePassword, setUsernamePassword] = useState("");
+  const [usernameSaving, setUsernameSaving] = useState(false);
 
-  const [oldPassword, setOldPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading) return;
     if (!isAuthenticated) {
-      router.push('/login')
-      return
+      router.push("/login");
+      return;
     }
-    loadProfile()
-  }, [isAuthenticated, isLoading, router])
+    loadProfile();
+  }, [isAuthenticated, isLoading, router]);
 
   const loadProfile = async () => {
     try {
-      const data = await api.getUserProfile()
+      const data = await api.getUserProfile();
       if (data.hasApiKey) {
-        setApiKey('••••••••••••••••••••••••••••••')
+        setApiKey("••••••••••••••••••••••••••••••");
       }
-      if (data.timeFormat) setTimeFormat(data.timeFormat)
-      if (data.firstDayOfWeek !== undefined) setFirstDayOfWeek(data.firstDayOfWeek)
+      if (data.timeFormat) setTimeFormat(data.timeFormat);
+      if (data.firstDayOfWeek !== undefined)
+        setFirstDayOfWeek(data.firstDayOfWeek);
     } catch (err) {
-      setError('Failed to load profile')
+      setError("Failed to load profile");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSaveApiKey = async () => {
-    setError('')
-    setSuccess('')
-    setSaving(true)
+    setError("");
+    setSuccess("");
+    setSaving(true);
     try {
-      if (apiKey === '••••••••••••••••••••••••••••••') {
-        setError('API key already saved')
-        setSaving(false)
-        return
+      if (apiKey === "••••••••••••••••••••••••••••••") {
+        setError("API key already saved");
+        setSaving(false);
+        return;
       }
-      await api.updateApiKey(apiKey || null)
-      setSuccess('API key saved successfully!')
-      setApiKey('••••••••••••••••••••••••••••••')
+      await api.updateApiKey(apiKey || null);
+      setSuccess("API key saved successfully!");
+      setApiKey("••••••••••••••••••••••••••••••");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save API key')
+      setError(err instanceof Error ? err.message : "Failed to save API key");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleRemoveApiKey = async () => {
-    setError('')
-    setSuccess('')
-    setSaving(true)
+    setError("");
+    setSuccess("");
+    setSaving(true);
     try {
-      await api.updateApiKey(null)
-      setApiKey('')
-      setSuccess('API key removed. Using default key.')
+      await api.updateApiKey(null);
+      setApiKey("");
+      setSuccess("API key removed. Using default key.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove API key')
+      setError(err instanceof Error ? err.message : "Failed to remove API key");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleSavePreferences = async () => {
-    setError('')
-    setSuccess('')
-    setSaving(true)
+    setError("");
+    setSuccess("");
+    setSaving(true);
     try {
-      await api.updateProfile({ timeFormat, firstDayOfWeek })
-      setContextFirstDayOfWeek(firstDayOfWeek)
-      setSuccess('Preferences saved!')
+      await api.updateProfile({ timeFormat, firstDayOfWeek });
+      setSuccess("Preferences saved!");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save preferences')
+      setError(
+        err instanceof Error ? err.message : "Failed to save preferences",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleChangeUsername = async () => {
-    setError('')
-    setSuccess('')
-    setUsernameSaving(true)
+    setError("");
+    setSuccess("");
+    setUsernameSaving(true);
     try {
-      if (!newUsername.trim()) throw new Error('Username cannot be empty')
-      if (!usernamePassword) throw new Error('Current password required')
-      await api.updateUsername(newUsername.trim(), usernamePassword)
-      setSuccess('Username updated!')
-      setNewUsername('')
-      setUsernamePassword('')
-      refreshAuth()
+      if (!newUsername.trim()) throw new Error("Username cannot be empty");
+      if (!usernamePassword) throw new Error("Current password required");
+      await api.updateUsername(newUsername.trim(), usernamePassword);
+      setSuccess("Username updated!");
+      setNewUsername("");
+      setUsernamePassword("");
+      refreshAuth();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update username')
+      setError(
+        err instanceof Error ? err.message : "Failed to update username",
+      );
     } finally {
-      setUsernameSaving(false)
+      setUsernameSaving(false);
     }
-  }
+  };
 
   const handleChangePassword = async () => {
-    setError('')
-    setSuccess('')
-    setPasswordSaving(true)
+    setError("");
+    setSuccess("");
+    setPasswordSaving(true);
     try {
-      if (!oldPassword) throw new Error('Current password required')
-      if (!newPassword) throw new Error('New password required')
-      if (newPassword !== confirmPassword) throw new Error('Passwords do not match')
-      if (newPassword.length < 6) throw new Error('Password must be at least 6 characters')
-      const result = await api.updatePassword(oldPassword, newPassword)
+      if (!oldPassword) throw new Error("Current password required");
+      if (!newPassword) throw new Error("New password required");
+      if (newPassword !== confirmPassword)
+        throw new Error("Passwords do not match");
+      if (newPassword.length < 6)
+        throw new Error("Password must be at least 6 characters");
+      const result = await api.updatePassword(oldPassword, newPassword);
       if (result.token) {
-        updateTokenCookie(result.token)
+        updateTokenCookie(result.token);
       }
-      setSuccess('Password updated! You may need to log in again on other devices.')
-      setOldPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      setSuccess(
+        "Password updated! You may need to log in again on other devices.",
+      );
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update password')
+      setError(
+        err instanceof Error ? err.message : "Failed to update password",
+      );
     } finally {
-      setPasswordSaving(false)
+      setPasswordSaving(false);
     }
-  }
+  };
 
   if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <PageLoading text="Loading settings..." />
       </div>
-    )
+    );
   }
 
-  if (!isAuthenticated) return null
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 px-4 py-3 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3 mb-4">
           <button
-            onClick={() => router.push('/calendar')}
+            onClick={() => router.push("/calendar")}
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -194,36 +202,54 @@ export default function SettingsPage() {
           <div className="rounded-lg border p-6 space-y-4">
             <h2 className="text-lg font-semibold">OpenRouter API Key</h2>
             <p className="text-sm text-muted-foreground">
-              By default, the app uses a shared API key. You can add your own to avoid rate limits.
-              Get your key at{' '}
-              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline">
+              By default, the app uses a shared API key. You can add your own to
+              avoid rate limits. Get your key at{" "}
+              <a
+                href="https://openrouter.ai/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
                 openrouter.ai/keys
               </a>
             </p>
             <div>
-              <label className="text-sm font-medium block mb-1.5">API Key</label>
+              <label className="text-sm font-medium block mb-1.5">
+                API Key
+              </label>
               <Input
                 type="password"
                 value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
+                onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-or-v1-..."
                 className="font-mono rounded-lg"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleSaveApiKey} disabled={saving} className="rounded-lg">
-                {saving ? 'Saving...' : 'Save API Key'}
+              <Button
+                onClick={handleSaveApiKey}
+                disabled={saving}
+                className="rounded-lg"
+              >
+                {saving ? "Saving..." : "Save API Key"}
               </Button>
               {hasApiKey && (
-                <Button variant="outline" onClick={handleRemoveApiKey} disabled={saving} className="rounded-lg">
+                <Button
+                  variant="outline"
+                  onClick={handleRemoveApiKey}
+                  disabled={saving}
+                  className="rounded-lg"
+                >
                   Remove Key
                 </Button>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              <strong>Status:</strong>{' '}
+              <strong>Status:</strong>{" "}
               {hasApiKey ? (
-                <span className="text-green-600">Using your personal API key</span>
+                <span className="text-green-600">
+                  Using your personal API key
+                </span>
               ) : (
                 <span>Using default shared key</span>
               )}
@@ -235,15 +261,17 @@ export default function SettingsPage() {
             <h2 className="text-lg font-semibold">Preferences</h2>
 
             <div>
-              <label className="text-sm font-medium block mb-2">Time Format</label>
+              <label className="text-sm font-medium block mb-2">
+                Time Format
+              </label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="radio"
                     name="timeFormat"
                     value="12h"
-                    checked={timeFormat === '12h'}
-                    onChange={() => setTimeFormat('12h')}
+                    checked={timeFormat === "12h"}
+                    onChange={() => setTimeFormat("12h")}
                   />
                   12-hour (AM/PM)
                 </label>
@@ -252,8 +280,8 @@ export default function SettingsPage() {
                     type="radio"
                     name="timeFormat"
                     value="24h"
-                    checked={timeFormat === '24h'}
-                    onChange={() => setTimeFormat('24h')}
+                    checked={timeFormat === "24h"}
+                    onChange={() => setTimeFormat("24h")}
                   />
                   24-hour
                 </label>
@@ -261,10 +289,12 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1.5">First Day of Week</label>
+              <label className="text-sm font-medium block mb-1.5">
+                First Day of Week
+              </label>
               <select
                 value={firstDayOfWeek}
-                onChange={e => setFirstDayOfWeek(Number(e.target.value))}
+                onChange={(e) => setFirstDayOfWeek(Number(e.target.value))}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value={0}>Sunday</option>
@@ -277,79 +307,105 @@ export default function SettingsPage() {
               </select>
             </div>
 
-            <Button onClick={handleSavePreferences} disabled={saving} className="rounded-lg">
-              {saving ? 'Saving...' : 'Save Preferences'}
+            <Button
+              onClick={handleSavePreferences}
+              disabled={saving}
+              className="rounded-lg"
+            >
+              {saving ? "Saving..." : "Save Preferences"}
             </Button>
           </div>
 
           {/* Change Username */}
           <div className="rounded-lg border p-6 space-y-4">
             <h2 className="text-lg font-semibold">Change Username</h2>
-            <p className="text-sm text-muted-foreground">Enter a new username and confirm with your current password.</p>
+            <p className="text-sm text-muted-foreground">
+              Enter a new username and confirm with your current password.
+            </p>
             <div>
-              <label className="text-sm font-medium block mb-1.5">New Username</label>
+              <label className="text-sm font-medium block mb-1.5">
+                New Username
+              </label>
               <Input
                 value={newUsername}
-                onChange={e => setNewUsername(e.target.value)}
+                onChange={(e) => setNewUsername(e.target.value)}
                 placeholder="New username"
                 className="rounded-lg"
               />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Current Password</label>
+              <label className="text-sm font-medium block mb-1.5">
+                Current Password
+              </label>
               <Input
                 type="password"
                 value={usernamePassword}
-                onChange={e => setUsernamePassword(e.target.value)}
+                onChange={(e) => setUsernamePassword(e.target.value)}
                 placeholder="Enter current password"
                 className="rounded-lg"
               />
             </div>
-            <Button onClick={handleChangeUsername} disabled={usernameSaving} className="rounded-lg">
-              {usernameSaving ? 'Saving...' : 'Update Username'}
+            <Button
+              onClick={handleChangeUsername}
+              disabled={usernameSaving}
+              className="rounded-lg"
+            >
+              {usernameSaving ? "Saving..." : "Update Username"}
             </Button>
           </div>
 
           {/* Change Password */}
           <div className="rounded-lg border p-6 space-y-4">
             <h2 className="text-lg font-semibold">Change Password</h2>
-            <p className="text-sm text-muted-foreground">Changing your password will log you out from other devices.</p>
+            <p className="text-sm text-muted-foreground">
+              Changing your password will log you out from other devices.
+            </p>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Current Password</label>
+              <label className="text-sm font-medium block mb-1.5">
+                Current Password
+              </label>
               <Input
                 type="password"
                 value={oldPassword}
-                onChange={e => setOldPassword(e.target.value)}
+                onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="Enter current password"
                 className="rounded-lg"
               />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">New Password</label>
+              <label className="text-sm font-medium block mb-1.5">
+                New Password
+              </label>
               <Input
                 type="password"
                 value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
+                onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password (min 6 chars)"
                 className="rounded-lg"
               />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Confirm New Password</label>
+              <label className="text-sm font-medium block mb-1.5">
+                Confirm New Password
+              </label>
               <Input
                 type="password"
                 value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
                 className="rounded-lg"
               />
             </div>
-            <Button onClick={handleChangePassword} disabled={passwordSaving} className="rounded-lg">
-              {passwordSaving ? 'Saving...' : 'Update Password'}
+            <Button
+              onClick={handleChangePassword}
+              disabled={passwordSaving}
+              className="rounded-lg"
+            >
+              {passwordSaving ? "Saving..." : "Update Password"}
             </Button>
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 # Better Calendar - Desktop-First UI/UX Redesign Plan
 
 ## Project Constraints
+
 - **No API/database changes**: Only UI/UX frontend code modifications
 - **Desktop-first only**: No mobile responsive styles required
 - **Dark mode only**: No light mode or theme toggle
@@ -11,6 +12,7 @@
 ---
 
 ## User-Validated Requirements (All Decisions Final)
+
 1. **Design Style**: Material Design 3
 2. **Layout**: 3-Panel (Left Sidebar + Center Calendar + Right Panel)
 3. **Components**: Shadcn/ui (already partially configured)
@@ -37,16 +39,21 @@
 ---
 
 ## Task Breakdown (Atomic Sections for AI Agents)
+
 Agents must complete all dependencies before starting a task. Each task is self-contained with explicit requirements, acceptance criteria, and anti-hallucination rules.
 
 ---
 
 ### Task T01: Design System & Global Styles Update
+
+Completed in `app/globals.css`.
 **Dependencies**: None  
 **Files**:
+
 - Modify: `app/globals.css`
 
 **Requirements**:
+
 1. Remove all light mode references (no `.light` class, no light mode variables)
 2. Finalize Material Design 3 dark palette (blue/purple):
    - Primary: oklch(0.62 0.21 264) (keep existing)
@@ -62,16 +69,19 @@ Agents must complete all dependencies before starting a task. Each task is self-
    ```
 
 **Acceptance Criteria**:
+
 - [ ] No light mode code exists in `globals.css`
 - [ ] All Shadcn variables use Material dark values
 - [ ] 3 distinct surface colors for sidebar/center/right panel
 - [ ] `npm run dev` starts without CSS errors
 
 **Reference Files**:
+
 - `app/globals.css` (current)
 - `components/ui/button.tsx` (confirm Shadcn variable usage)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add theme toggle or light mode
 - Do NOT modify Tailwind config (uses `@theme inline` already)
 - Do NOT change component files
@@ -79,41 +89,55 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T02: Update Calendar Context
+
+Completed in `lib/calendar-context.tsx`.
+
 **Dependencies**: None  
 **Files**:
+
 - Modify: `lib/calendar-context.tsx`
 
 **Requirements**:
+
 1. Delete `ViewMode` type and all week/day view references
 2. Remove `viewMode`, `setViewMode` states
 3. Add new typed states:
+
    ```typescript
-   type RightPanelMode = 'ai-input' | 'day-view' | 'event-details' | 'extracted-events'
-   
+   type RightPanelMode =
+     | "ai-input"
+     | "day-view"
+     | "event-details"
+     | "extracted-events";
+
    interface CalendarContextType {
-     selectedDate: Date | null
-     setSelectedDate: (date: Date | null) => void
-     selectedEvent: Event | null // Use Prisma Event type
-     setSelectedEvent: (event: Event | null) => void
-     rightPanelMode: RightPanelMode
-     setRightPanelMode: (mode: RightPanelMode) => void
-     navigateToday: () => void
+     selectedDate: Date | null;
+     setSelectedDate: (date: Date | null) => void;
+     selectedEvent: Event | null; // Use Prisma Event type
+     setSelectedEvent: (event: Event | null) => void;
+     rightPanelMode: RightPanelMode;
+     setRightPanelMode: (mode: RightPanelMode) => void;
+     navigateToday: () => void;
    }
    ```
+
 4. Keep existing `CalendarProvider` wrapper and `useCalendar` hook
 5. Export all new states/setters
 
 **Acceptance Criteria**:
-- [ ] Zero references to `ViewMode`, `viewMode`, `setViewMode`
-- [ ] All new states are properly typed with Prisma Event type
-- [ ] `useCalendar()` returns all new states/setters
-- [ ] No breaking changes to existing imports
+
+- [x] Zero references to `ViewMode`, `viewMode`, `setViewMode` in `lib/calendar-context.tsx`
+- [x] All new states are properly typed with Prisma Event type
+- [x] `useCalendar()` returns all new states/setters
+- [x] No breaking changes to existing imports
 
 **Reference Files**:
+
 - `lib/calendar-context.tsx` (current)
 - `lib/db-queries.ts` (confirm Event type shape)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT modify API routes or database queries
 - Do NOT add new providers to `layout.tsx`
 - Do NOT change the context provider structure
@@ -121,12 +145,15 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T03: Redesign Collapsible Sidebar
+
 **Dependencies**: None  
 **Files**:
+
 - Modify: `components/Sidebar.tsx`
 - Delete: `components/ui/bottom-sheet.tsx`
 
 **Requirements**:
+
 1. Collapsible to 64px icon-only mode with toggle button at bottom
 2. Nav items (exact hrefs):
    - Calendar: `/calendar` (icon: `Calendar` from lucide-react)
@@ -140,6 +167,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 7. Material Design styling: Use existing Shadcn button/link styles
 
 **Acceptance Criteria**:
+
 - [ ] Sidebar collapses to 64px icon-only mode
 - [ ] All 4 nav items link to correct routes
 - [ ] Active route highlighting works
@@ -148,10 +176,12 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] `bottom-sheet.tsx` deleted
 
 **Reference Files**:
+
 - `components/Sidebar.tsx` (current)
 - `lib/auth-context.tsx` (confirm logout() usage)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add mobile responsive styles
 - Do NOT use bottom sheet component
 - Do NOT add view mode switcher (month only now)
@@ -159,12 +189,15 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T04: Create Right Panel Component
+
 **Dependencies**: T02 (Calendar Context)  
 **Files**:
+
 - Create: `components/RightPanel.tsx`
 - Create: `components/EventCard.tsx` (reusable event card for all views)
 
 **Requirements**:
+
 1. Fixed 400px width, right side of layout
 2. Context-aware rendering based on `rightPanelMode`:
    - `ai-input`: Textarea + "Extract Events" button (use existing OpenRouter logic from `lib/openrouter.ts`)
@@ -175,6 +208,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 4. `EventCard` props: `event: Event`, `onClick: () => void`, `showActions?: boolean`
 
 **Acceptance Criteria**:
+
 - [ ] All 4 panel states render correctly based on context
 - [ ] EventCard component is reusable and styled consistently
 - [ ] "Extract Events" calls OpenRouter API correctly
@@ -182,11 +216,13 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] Save All/Cancel works for extracted events
 
 **Reference Files**:
+
 - `components/ExtractedEvents.tsx` (current)
 - `components/EventForm.tsx` (current)
 - `lib/openrouter.ts` (confirm API call logic)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT use modals for event details – must render in right panel
 - Do NOT modify OpenRouter API logic
 - Do NOT add scrolling to right panel (truncate content instead)
@@ -194,11 +230,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T05: Update Root Layout to 3-Panel
+
 **Dependencies**: T02 (Context), T03 (Sidebar), T04 (RightPanel)  
 **Files**:
+
 - Modify: `app/layout.tsx`
 
 **Requirements**:
+
 1. 3-panel structure:
    ```tsx
    <html>
@@ -220,16 +259,19 @@ Agents must complete all dependencies before starting a task. Each task is self-
 4. Keep existing font (Inter) and metadata
 
 **Acceptance Criteria**:
+
 - [ ] 3 panels render side by side
 - [ ] Collapsing sidebar adjusts main margin smoothly
 - [ ] Right panel renders correct state based on context
 - [ ] No mobile header spacing
 
 **Reference Files**:
+
 - `app/layout.tsx` (current)
 - `components/Sidebar.tsx` (confirm collapsible state)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add mobile styles
 - Do NOT modify AuthProvider/CalendarProvider
 - Do NOT change metadata
@@ -237,11 +279,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T06: Build Custom Month Calendar Grid
+
 **Dependencies**: T02 (Context), T05 (Layout)  
 **Files**:
+
 - Create: `components/CalendarGrid.tsx`
 
 **Requirements**:
+
 1. **Custom build only**: No calendar libraries (react-big-calendar, FullCalendar, etc.)
 2. Month only: No week/day views
 3. Features:
@@ -255,6 +300,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 5. Material Motion: Subtle animations for month navigation, event hover
 
 **Acceptance Criteria**:
+
 - [ ] Custom month grid renders correctly for any month
 - [ ] Events display as colored bars in day cells
 - [ ] Drag and drop moves events between days (updates via API)
@@ -263,10 +309,12 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] Search icon triggers SearchModal (T07)
 
 **Reference Files**:
+
 - `lib/api.ts` (confirm event update API call)
 - `components/ui/card.tsx` (confirm Shadcn styling)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT use any calendar libraries
 - Do NOT add week/day views
 - Do NOT add mobile responsive styles
@@ -275,11 +323,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T07: Create Search Floating Modal
+
 **Dependencies**: T06 (Calendar Grid has search icon)  
 **Files**:
+
 - Create: `components/SearchModal.tsx`
 
 **Requirements**:
+
 1. Triggered by search icon in Calendar Grid header
 2. Center modal with backdrop blur (Material Design dialog)
 3. Search input: Filters events by title only (case-insensitive)
@@ -288,16 +339,19 @@ Agents must complete all dependencies before starting a task. Each task is self-
 6. Material Design styling: Use Shadcn dialog component
 
 **Acceptance Criteria**:
+
 - [ ] Modal opens/closes correctly from calendar header
 - [ ] Search filters events by title in real-time
 - [ ] Clicking result opens event in right panel
 - [ ] No console errors on search
 
 **Reference Files**:
+
 - `components/ui/dialog.tsx` (Shadcn dialog)
 - `lib/api.ts` (confirm event list API call for search)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT search description/location (title only per user requirement)
 - Do NOT render search in right panel (center modal only)
 - Do NOT add global search shortcut
@@ -305,11 +359,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T08: Redesign Events List Page
+
 **Dependencies**: T04 (EventCard component exists)  
 **Files**:
+
 - Modify: `app/events/page.tsx`
 
 **Requirements**:
+
 1. Events grouped by date with collapsible month/week sections
 2. Each event uses `EventCard` component, click sets `selectedEvent` and opens in right panel
 3. Empty state: "No events yet" message with link to AI Input
@@ -317,16 +374,19 @@ Agents must complete all dependencies before starting a task. Each task is self-
 5. No pagination: Load all events (assume MVP scale)
 
 **Acceptance Criteria**:
+
 - [ ] Events grouped correctly by date
 - [ ] Collapsible sections work
 - [ ] Clicking event opens in right panel
 - [ ] Empty state renders when no events
 
 **Reference Files**:
+
 - `app/events/page.tsx` (current, if exists)
 - `lib/api.ts` (confirm event list API call)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add event creation form to this page
 - Do NOT use table layout (use list with EventCard)
 - Do NOT add search (use T07 global search)
@@ -334,11 +394,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T09: Redesign Settings Page
+
 **Dependencies**: None  
 **Files**:
+
 - Modify: `app/settings/page.tsx`
 
 **Requirements**:
+
 1. Sections (in order):
    - **API Configuration**: OpenRouter API key input (password type), model dropdown (fetch models from `https://openrouter.ai/api/v1/models` using existing API key)
    - **Preferences**: First day of week (Sunday/Monday dropdown), Time format (12h/24h toggle)
@@ -348,6 +411,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 4. Logout uses `logout()` from `useAuth()`
 
 **Acceptance Criteria**:
+
 - [ ] All sections render correctly
 - [ ] API key/model selection works
 - [ ] Username/password change works with current password verification
@@ -355,11 +419,13 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] Logout button works
 
 **Reference Files**:
+
 - `app/settings/page.tsx` (current, if exists)
 - `lib/auth.ts` (confirm password change logic)
 - `lib/openrouter.ts` (confirm API key usage)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add notification preferences (not requested)
 - Do NOT add theme toggle (dark only)
 - Do NOT modify auth API routes
@@ -367,11 +433,14 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T10: Create Onboarding Quick Tour
+
 **Dependencies**: T03 (Sidebar), T06 (Calendar Grid), T04 (RightPanel)  
 **Files**:
+
 - Create: `components/OnboardingTour.tsx`
 
 **Requirements**:
+
 1. Triggered on first login only: Check `localStorage.getItem('onboarding-complete')` flag
 2. 3 steps (exact targets):
    - Step 1: Highlight left sidebar (use `data-tour="sidebar"` attribute)
@@ -382,6 +451,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 5. On complete: Set `localStorage.setItem('onboarding-complete', 'true')`
 
 **Acceptance Criteria**:
+
 - [ ] Tour shows only on first login
 - [ ] 3 steps highlight correct elements
 - [ ] Skip/Next/Got It buttons work
@@ -389,11 +459,13 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] No tour on subsequent logins
 
 **Reference Files**:
+
 - `components/Sidebar.tsx` (add data-tour attributes)
 - `components/CalendarGrid.tsx` (add data-tour attributes)
 - `components/RightPanel.tsx` (add data-tour attributes)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT add more than 3 steps
 - Do NOT use third-party tour libraries
 - Do NOT show tour to logged-out users
@@ -401,12 +473,15 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T11: Update Existing Components
+
 **Dependencies**: T04 (RightPanel uses these components)  
 **Files**:
+
 - Modify: `components/EventForm.tsx`
 - Modify: `components/ExtractedEvents.tsx`
 
 **Requirements**:
+
 1. **EventForm.tsx**:
    - Material Design styling: Use Shadcn input, label, button components
    - Edit mode: Pre-fill with event data, "Update" button instead of "Create"
@@ -418,17 +493,20 @@ Agents must complete all dependencies before starting a task. Each task is self-
    - Compact layout for right panel
 
 **Acceptance Criteria**:
+
 - [ ] EventForm matches Material dark style
 - [ ] ExtractedEvents matches Material dark style
 - [ ] Both work correctly in RightPanel states
 - [ ] No broken form submissions
 
 **Reference Files**:
+
 - `components/EventForm.tsx` (current)
 - `components/ExtractedEvents.tsx` (current)
 - `components/ui/input.tsx` (Shadcn input)
 
 **Anti-Hallucination Notes**:
+
 - Do NOT change form submission logic (keep API calls)
 - Do NOT add new form fields
 - Do NOT modify API calls
@@ -436,10 +514,12 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ### Task T12: Cleanup & Verification
+
 **Dependencies**: All previous tasks  
 **Files**: All modified files
 
 **Requirements**:
+
 1. Delete unused files: `components/ui/bottom-sheet.tsx` (already done in T03)
 2. Remove unused imports, dead code
 3. Verify all user flows:
@@ -453,6 +533,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 4. Check for console errors, broken styles, missing animations
 
 **Acceptance Criteria**:
+
 - [ ] No unused files or dead code
 - [ ] All user flows work without errors
 - [ ] No console errors in `npm run dev`
@@ -460,6 +541,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 - [ ] No mobile styles present
 
 **Anti-Hallucination Notes**:
+
 - Do NOT modify API routes or database
 - Do NOT add new features not in this plan
 - Do NOT commit changes (wait for user request)
@@ -467,6 +549,7 @@ Agents must complete all dependencies before starting a task. Each task is self-
 ---
 
 ## Agent Execution Rules
+
 1. Complete all dependencies before starting a task
 2. Read all reference files listed for the task
 3. Follow acceptance criteria exactly
