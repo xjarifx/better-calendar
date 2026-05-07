@@ -130,7 +130,7 @@ export default function SearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-hidden border-border/80 bg-popover/95 p-0 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <DialogContent className="max-w-4xl overflow-hidden border-border/80 bg-popover/95 p-0 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <DialogHeader className="border-b border-border/70 px-6 py-5">
           <DialogTitle className="text-lg">Search events</DialogTitle>
           <DialogDescription>
