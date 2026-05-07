@@ -63,26 +63,6 @@ export default function RightPanel() {
     }
   };
 
-  const handleDuplicate = async (evt: any) => {
-    const payload: Record<string, unknown> = {
-      title: evt.title,
-      startDate: evt.start_date,
-    };
-    if (evt.start_time) payload.startTime = evt.start_time;
-    if (evt.end_date) payload.endDate = evt.end_date;
-    if (evt.end_time) payload.endTime = evt.end_time;
-    if (evt.location) payload.location = evt.location;
-    if (evt.description) payload.description = evt.description;
-    try {
-      await api.createEvent(payload);
-      const res = await api.getEvents();
-      setEvents(res.events || res);
-      // keep viewing duplicated event list
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   return (
     <aside className="fixed right-0 top-0 h-full z-30 w-[400px] border-l border-border bg-right-panel-bg flex flex-col">
       <div className="flex-1 overflow-y-auto p-4">
@@ -156,12 +136,7 @@ export default function RightPanel() {
               >
                 Delete
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDuplicate(selectedEvent)}
-              >
-                Duplicate
-              </Button>
+
             </div>
 
             <div className="mt-4">
