@@ -25,9 +25,6 @@ export default function RightPanel() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  if (!isAuthenticated) return null;
-
   useEffect(() => {
     // load events once for day-view filtering
     let mounted = true;
@@ -42,6 +39,8 @@ export default function RightPanel() {
       mounted = false;
     };
   }, []);
+
+  if (!isAuthenticated) return null;
 
   const handleExtract = async () => {
     if (!text) return;

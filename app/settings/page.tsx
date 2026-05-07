@@ -14,7 +14,8 @@ function updateTokenCookie(token: string) {
 }
 
 export default function SettingsPage() {
-  const { isAuthenticated, isLoading, hasApiKey, refreshAuth } = useAuth();
+  const { isAuthenticated, isLoading, hasApiKey, refreshAuth, logout } =
+    useAuth();
   const router = useRouter();
 
   const [apiKey, setApiKey] = useState("");
@@ -25,6 +26,8 @@ export default function SettingsPage() {
 
   const [timeFormat, setTimeFormat] = useState("12h");
   const [firstDayOfWeek, setFirstDayOfWeek] = useState(0);
+  const [models, setModels] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   const [newUsername, setNewUsername] = useState("");
   const [usernamePassword, setUsernamePassword] = useState("");
@@ -42,7 +45,20 @@ export default function SettingsPage() {
       return;
     }
     loadProfile();
+    loadModels();
   }, [isAuthenticated, isLoading, router]);
+
+  const loadModels = async () => {
+    try {
+      const data = await api.getFreeModels();
+      if (Array.isArray(data)) setModels(data);
+      const saved = localStorage.getItem("preferred-model");
+      if (saved) setSelectedModel(saved);
+      else if (data && data[0]) setSelectedModel(data[0]);
+    } catch (err) {
+      // ignore model fetch errors
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -108,6 +124,39 @@ export default function SettingsPage() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleModelChange = (m: string) => {
+    setSelectedModel(m);
+    try {
+      localStorage.setItem("preferred-model", m);
+    } catch {}
+    setSuccess("Model selected");
+    setTimeout(() => setSuccess(""), 1500);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete your account? This action cannot be undone.",
+      )
+    )
+      return;
+    try {
+      const res = await fetch("/api/auth/delete", { method: "DELETE" });
+      if (res.ok) {
+        // call logout to clear client state
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } catch {}
+        router.push("/login");
+      } else {
+        const text = await res.text();
+        setError("Account deletion failed: " + (text || res.statusText));
+      }
+    } catch (err) {
+      setError("Account deletion failed");
     }
   };
 
@@ -189,6 +238,22 @@ export default function SettingsPage() {
         {error && (
           <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm mb-4">
             {error}
+          </div>
+        )}
+        {models.length > 0 && (
+          <div>
+            <label className="text-sm font-medium block mb-1.5">Model</label>
+            <select
+              value={selectedModel || ""}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
+              {models.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
           </div>
         )}
         {success && (
@@ -403,6 +468,29 @@ export default function SettingsPage() {
             >
               {passwordSaving ? "Saving..." : "Update Password"}
             </Button>
+          </div>
+
+          {/* Account Actions */}
+          <div className="rounded-lg border p-6 space-y-4">
+            <h2 className="text-lg font-semibold">Account</h2>
+            <p className="text-sm text-muted-foreground">
+              Logout or delete your account.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={handleDeleteAccount}>
+                Delete Account
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  try {
+                    logout();
+                  } catch {}
+                }}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </main>
