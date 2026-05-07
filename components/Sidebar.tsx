@@ -80,7 +80,7 @@ export default function Sidebar() {
           type="button"
           variant="ghost"
           onClick={logout}
-          className="mb-2 h-9 w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          className="mb-2 h-9 w-full justify-start gap-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"
           aria-label="Logout"
         >
           <LogOut className="h-4 w-4" />
