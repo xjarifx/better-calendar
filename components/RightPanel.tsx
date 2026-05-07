@@ -112,7 +112,7 @@ export default function RightPanel() {
               {(events || [])
                 .filter((e) => {
                   if (!selectedDate) return false;
-                  const sd = new Date(e.startDate).toDateString();
+                  const sd = new Date(e.start_date).toDateString();
                   return sd === new Date(selectedDate).toDateString();
                 })
                 .map((e) => (
