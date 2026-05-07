@@ -2,245 +2,447 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-type PetState = "idle" | "walk" | "react";
+const PX = 6;
+const SHIP_W = 10;
+const SHIP_H = 8;
 
-const EMOJIS = ["🐱", "🐶", "🐰", "🐼", "🦊", "🐸"];
+type GameState = "playing" | "gameover";
 
-const CAT_PALETTE = {
-  d: "#2D2D2D",
-  p: "#FFB5B5",
-  o: "#D4845A",
-  e: "#4ECDC4",
-  n: "#FF8C8C",
-  w: "#FFF5E6",
-  b: "#FFB0B0",
-};
+interface Asteroid {
+  id: number;
+  x: number;
+  y: number;
+  r: number;
+  speed: number;
+  rot: number;
+}
 
-// 8 wide x 10 tall pixel cat
-const PIXEL_CAT = [
-  ["_", "d", "d", "_", "_", "d", "d", "_"],
-  ["d", "p", "d", "d", "d", "d", "p", "d"],
-  ["d", "o", "o", "o", "o", "o", "o", "d"],
-  ["d", "o", "o", "o", "o", "o", "o", "d"],
-  ["d", "o", "e", "o", "o", "e", "o", "d"],
-  ["d", "o", "o", "o", "o", "o", "o", "d"],
-  ["d", "o", "o", "n", "o", "o", "o", "d"],
-  ["d", "d", "o", "o", "o", "d", "d", "_"],
-  ["_", "d", "d", "w", "w", "d", "d", "_"],
-  ["_", "_", "d", "d", "d", "d", "_", "_"],
+interface Laser {
+  x: number;
+  y: number;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: string;
+}
+
+interface Star {
+  x: number;
+  y: number;
+  speed: number;
+  size: number;
+}
+
+const SHIP_SPRITE: (string | null)[][] = [
+  [null, null, null, null, "b", "b", null, null, null, null],
+  [null, null, null, "b", null, null, "b", null, null, null],
+  [null, null, "b", null, "y", "y", null, "b", null, null],
+  [null, "b", null, null, null, null, null, null, "b", null],
+  ["b", null, null, null, null, null, null, null, null, "b"],
+  [null, "b", null, null, null, null, null, null, "b", null],
+  [null, null, "b", null, null, null, null, "b", null, null],
+  [null, null, null, "b", null, null, "b", null, null, null],
 ];
 
-// ---- Geometric Cat (SVG) ----
+const SHIP_COLORS: Record<string, string> = {
+  b: "#4A90D9",
+  y: "#FFD700",
+};
 
-function GeometricCat({ isReact, state }: { isReact: boolean; state: PetState }) {
-  const anim = isReact ? "animate-spring" : state === "walk" ? "animate-bob" : "animate-float";
+const ASTEROID_COLORS = ["#8B8B8B", "#7A7A7A", "#9A9A9A", "#6B6B6B"];
 
-  return (
-    <div className={`select-none ${anim}`}>
-      <svg width="80" height="90" viewBox="0 0 80 90" fill="none">
-        <polygon points="15,35 5,5 25,20" fill="#D4845A" />
-        <polygon points="16,30 10,14 22,22" fill="#FFB5B5" />
-        <polygon points="65,35 75,5 55,20" fill="#D4845A" />
-        <polygon points="64,30 70,14 58,22" fill="#FFB5B5" />
-        <ellipse cx="40" cy="50" rx="32" ry="30" fill="#D4845A" />
-        <ellipse cx="40" cy="55" rx="22" ry="20" fill="#FFF5E6" />
-        <ellipse cx="28" cy="45" rx="6" ry="7" fill="white" />
-        <ellipse cx="52" cy="45" rx="6" ry="7" fill="white" />
-        <ellipse cx="28" cy="45" rx="3" ry="3.5" fill="#2D2D2D">
-          <animate attributeName="ry" dur="4s" repeatCount="indefinite"
-            values="3.5;3.5;3.5;0.5;3.5;3.5" keyTimes="0;0.85;0.92;0.95;0.97;1" />
-        </ellipse>
-        <ellipse cx="52" cy="45" rx="3" ry="3.5" fill="#2D2D2D">
-          <animate attributeName="ry" dur="4s" repeatCount="indefinite"
-            values="3.5;3.5;3.5;0.5;3.5;3.5" keyTimes="0;0.85;0.92;0.95;0.97;1" />
-        </ellipse>
-        <ellipse cx="40" cy="53" rx="3" ry="2" fill="#FF8C8C" />
-        <path d="M34,58 Q40,64 46,58" stroke="#2D2D2D" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="26" y1="52" x2="8" y2="48" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <line x1="26" y1="55" x2="6" y2="55" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <line x1="26" y1="58" x2="8" y2="62" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <line x1="54" y1="52" x2="72" y2="48" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <line x1="54" y1="55" x2="74" y2="55" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <line x1="54" y1="58" x2="72" y2="62" stroke="#2D2D2D" strokeWidth="0.8" opacity="0.25" />
-        <circle cx="16" cy="55" r="5" fill="#FFB0B0" opacity="0.35" />
-        <circle cx="64" cy="55" r="5" fill="#FFB0B0" opacity="0.35" />
-      </svg>
-    </div>
-  );
+let nextId = 1;
+
+function rand(min: number, max: number) {
+  return Math.random() * (max - min) + min;
 }
 
-// ---- Blob Pet (SVG morphing) ----
-
-function BlobPet({ isReact, state }: { isReact: boolean; state: PetState }) {
-  const anim = isReact ? "animate-spring" : state === "walk" ? "animate-bob" : "animate-float";
-  const [morph, setMorph] = useState(false);
-
-  useEffect(() => {
-    const t = setInterval(() => setMorph((p) => !p), 2500);
-    return () => clearInterval(t);
-  }, []);
-
-  const path = morph
-    ? "M35,8 C52,8 62,18 62,35 C62,52 52,72 35,72 C18,72 8,52 8,35 C8,18 18,8 35,8Z"
-    : "M35,5 C50,5 65,15 65,35 C65,55 55,75 35,75 C15,75 5,55 5,35 C5,15 20,5 35,5Z";
-
-  return (
-    <div className={`select-none ${anim}`}>
-      <svg width="70" height="80" viewBox="0 0 70 80" fill="none">
-        <path d={path} fill="#FFB5C2" style={{ transition: "d 0.8s ease-in-out" }} />
-        <circle cx="26" cy="32" r="4.5" fill="#2D2D2D" />
-        <circle cx="44" cy="32" r="4.5" fill="#2D2D2D" />
-        <path d="M28,44 Q35,50 42,44" stroke="#2D2D2D" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <circle cx="18" cy="40" r="5" fill="#FF8C8C" opacity="0.3" />
-        <circle cx="52" cy="40" r="5" fill="#FF8C8C" opacity="0.3" />
-      </svg>
-    </div>
-  );
+function randInt(min: number, max: number) {
+  return Math.floor(rand(min, max + 1));
 }
 
-// ---- Emoji Pet ----
-
-function EmojiPet({ isReact, state }: { isReact: boolean; state: PetState }) {
-  const [emoji] = useState(() => EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
-  const anim = isReact ? "animate-spring" : state === "walk" ? "animate-bob" : "animate-float";
-
-  return (
-    <div className={`select-none ${anim}`}>
-      <span className="block text-center leading-none" style={{ fontSize: "64px" }}>
-        {emoji}
-      </span>
-    </div>
-  );
+function drawShip(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  for (let row = 0; row < SHIP_H; row++) {
+    for (let col = 0; col < SHIP_W; col++) {
+      const ch = SHIP_SPRITE[row][col];
+      if (!ch) continue;
+      ctx.fillStyle = SHIP_COLORS[ch];
+      ctx.fillRect(x + col * PX, y + row * PX, PX, PX);
+    }
+  }
 }
 
-// ---- Pixel Cat (grid) ----
-
-function PixelCat({ isReact, state }: { isReact: boolean; state: PetState }) {
-  const PX = 6;
-  const anim = isReact ? "animate-spring" : state === "walk" ? "animate-bob" : "animate-float";
-
-  return (
-    <div className={`select-none ${anim}`}>
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: `repeat(8, ${PX}px)`,
-          gridTemplateRows: `repeat(10, ${PX}px)`,
-        }}
-      >
-        {PIXEL_CAT.flatMap((row, y) =>
-          row.map((ch, x) => (
-            <div
-              key={`${y}-${x}`}
-              style={{
-                width: PX,
-                height: PX,
-                backgroundColor: ch === "_" ? "transparent" : CAT_PALETTE[ch as keyof typeof CAT_PALETTE],
-                borderRadius: ch === "e" ? "50%" : 0,
-              }}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
+function drawAsteroid(ctx: CanvasRenderingContext2D, a: Asteroid) {
+  const sides = 8 + Math.floor(a.r / 4);
+  const wobble = (t: number) => (Math.sin(t * 3 + a.id) * 0.15 + 1);
+  ctx.fillStyle = ASTEROID_COLORS[a.id % ASTEROID_COLORS.length];
+  ctx.beginPath();
+  for (let i = 0; i <= sides; i++) {
+    const angle = (i / sides) * Math.PI * 2 + a.rot;
+    const rad = a.r * wobble(angle);
+    const px = a.x + Math.cos(angle) * rad;
+    const py = a.y + Math.sin(angle) * rad;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
 }
-
-// ---- Main component ----
-
-const PET_COMPONENTS = [GeometricCat, BlobPet, EmojiPet, PixelCat] as const;
 
 export default function EmptyStatePet() {
-  const [styleIndex, setStyleIndex] = useState(() => Math.floor(Math.random() * PET_COMPONENTS.length));
-  const [state, setState] = useState<PetState>("idle");
-  const [x, setX] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef(0);
-  const reactTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const stateRef = useRef<GameState>("playing");
+  const shipXRef = useRef(150);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const invulnRef = useRef(0);
+  const asteroidsRef = useRef<Asteroid[]>([]);
+  const lasersRef = useRef<Laser[]>([]);
+  const particlesRef = useRef<Particle[]>([]);
+  const starsRef = useRef<Star[]>([]);
+  const spawnTimerRef = useRef(0);
+  const shootTimerRef = useRef(0);
+  const mouseXRef = useRef(150);
+  const shootingRef = useRef(false);
+  const dimsRef = useRef({ w: 368, h: 400 });
 
-  const PetComponent = PET_COMPONENTS[styleIndex];
+  const [gameState, setGameState] = useState<GameState>("playing");
+  // Force re-render for UI overlay
+  const [uiTick, setUiTick] = useState(0);
 
+  stateRef.current = gameState;
+
+  // Resize + init
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
-    const maxX = container.clientWidth - 80;
-    if (maxX > 0) setX(Math.random() * maxX);
-  }, [styleIndex]);
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
 
-  const walk = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const maxX = container.clientWidth - 80;
-    if (maxX <= 0) return;
+    const resize = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      canvas.width = w;
+      canvas.height = h;
+      dimsRef.current = { w, h };
+      shipXRef.current = w / 2 - (SHIP_W * PX) / 2;
+      mouseXRef.current = shipXRef.current;
 
-    let pos = x;
-    let dir: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
-    if (pos <= 0) dir = 1;
-    if (pos >= maxX) dir = -1;
-
-    const animate = () => {
-      pos += dir * 0.7;
-      if (pos <= 0) { pos = 0; dir = 1; }
-      if (pos >= maxX) { pos = maxX; dir = -1; }
-      setX(pos);
-      rafRef.current = requestAnimationFrame(animate);
+      // Init stars
+      const stars: Star[] = [];
+      for (let i = 0; i < 60; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          speed: 0.3 + Math.random() * 0.8,
+          size: 0.5 + Math.random() * 1.5,
+        });
+      }
+      starsRef.current = stars;
     };
 
-    rafRef.current = requestAnimationFrame(animate);
-  }, [x]);
-
-  useEffect(() => {
-    if (state !== "walk") {
-      cancelAnimationFrame(rafRef.current);
-      return;
-    }
-    walk();
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [state, walk]);
-
-  useEffect(() => {
-    const transition = () => {
-      setState((prev) => {
-        if (prev === "react") return prev;
-        return Math.random() > 0.45 ? "walk" : "idle";
-      });
-    };
-    const t = setInterval(transition, 2500 + Math.random() * 2000);
-    return () => clearInterval(t);
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+    return () => ro.disconnect();
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
-    setState("react");
-    clearTimeout(reactTimeoutRef.current);
-    reactTimeoutRef.current = setTimeout(() => setState("idle"), 2000);
+  // Game loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const loop = () => {
+      const { w, h } = dimsRef.current;
+      if (w <= 0 || h <= 0) return;
+
+      if (stateRef.current === "playing") {
+        // Stars
+        for (const s of starsRef.current) {
+          s.y += s.speed;
+          if (s.y > h) { s.y = -2; s.x = Math.random() * w; }
+        }
+
+        // Spawn asteroids
+        spawnTimerRef.current += 1;
+        const interval = Math.max(300, 800 - Math.min(scoreRef.current, 400));
+        if (spawnTimerRef.current > interval) {
+          spawnTimerRef.current = 0;
+          const r = randInt(12, 24);
+          asteroidsRef.current.push({
+            id: nextId++,
+            x: rand(r, w - r),
+            y: -r,
+            r,
+            speed: rand(0.5, 1.5 + scoreRef.current * 0.002),
+            rot: rand(0, Math.PI * 2),
+          });
+        }
+
+        // Move asteroids
+        for (const a of asteroidsRef.current) {
+          a.y += a.speed;
+          a.rot += 0.02;
+        }
+
+        // Move lasers
+        for (const l of lasersRef.current) {
+          l.y -= 5;
+        }
+
+        // Shooting
+        if (shootingRef.current) {
+          shootTimerRef.current += 1;
+          if (shootTimerRef.current > 5) {
+            shootTimerRef.current = 0;
+            lasersRef.current.push({
+              x: shipXRef.current + (SHIP_W * PX) / 2 - 2,
+              y: h - SHIP_H * PX - 30,
+            });
+          }
+        }
+
+        // Laser-asteroid collisions
+        const newAsteroids: Asteroid[] = [];
+        const destroyedLasers = new Set<number>();
+
+        for (let ai = 0; ai < asteroidsRef.current.length; ai++) {
+          const a = asteroidsRef.current[ai];
+          let hit = false;
+          for (let li = 0; li < lasersRef.current.length; li++) {
+            const l = lasersRef.current[li];
+            const dx = l.x - a.x;
+            const dy = l.y - a.y;
+            if (dx * dx + dy * dy < a.r * a.r) {
+              hit = true;
+              destroyedLasers.add(li);
+              break;
+            }
+          }
+          if (hit) {
+            // Explosion particles
+            for (let i = 0; i < 12; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = rand(1, 4);
+              particlesRef.current.push({
+                x: a.x,
+                y: a.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1,
+                color: ASTEROID_COLORS[a.id % ASTEROID_COLORS.length],
+              });
+            }
+            if (a.r > 14) {
+              const r1 = randInt(6, a.r * 0.7);
+              const r2 = randInt(6, a.r * 0.7);
+              newAsteroids.push({ ...a, id: nextId++, r: r1, speed: rand(0.8, 2) });
+              newAsteroids.push({ ...a, id: nextId++, r: r2, speed: rand(0.8, 2) });
+              scoreRef.current += 25;
+            } else if (a.r > 8) {
+              const r1 = randInt(4, 7);
+              const r2 = randInt(4, 7);
+              newAsteroids.push({ ...a, id: nextId++, r: r1, speed: rand(1, 3) });
+              newAsteroids.push({ ...a, id: nextId++, r: r2, speed: rand(1, 3) });
+              scoreRef.current += 50;
+            } else {
+              scoreRef.current += 100;
+            }
+          } else {
+            newAsteroids.push(a);
+          }
+        }
+
+        // Remove hit lasers
+        lasersRef.current = lasersRef.current.filter((_, i) => !destroyedLasers.has(i));
+
+        // Apply split asteroids
+        asteroidsRef.current = newAsteroids;
+
+        // Ship-asteroid collision
+        if (invulnRef.current <= 0) {
+          const cx = shipXRef.current + (SHIP_W * PX) / 2;
+          const cy = dimsRef.current.h - (SHIP_H * PX) / 2 - 30;
+          for (let ai = asteroidsRef.current.length - 1; ai >= 0; ai--) {
+            const a = asteroidsRef.current[ai];
+            const dx = cx - a.x;
+            const dy = cy - a.y;
+            if (dx * dx + dy * dy < (a.r + 12) * (a.r + 12)) {
+              livesRef.current -= 1;
+              invulnRef.current = 90;
+              // Ship explosion
+              for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = rand(2, 6);
+                particlesRef.current.push({
+                  x: cx,
+                  y: cy,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  life: 1,
+                  color: ["#4A90D9", "#FFD700", "#FFF"][i % 3],
+                });
+              }
+              if (livesRef.current <= 0) {
+                setGameState("gameover");
+              }
+              setUiTick((t) => t + 1);
+              break;
+            }
+          }
+        } else {
+          invulnRef.current -= 1;
+        }
+
+        // Update particles
+        for (const p of particlesRef.current) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.025;
+        }
+
+        // Clean off-screen objects
+        asteroidsRef.current = asteroidsRef.current.filter((a) => a.y < h + a.r + 10);
+        lasersRef.current = lasersRef.current.filter((l) => l.y > -10);
+        particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
+      }
+
+      // === RENDER ===
+      ctx.clearRect(0, 0, w, h);
+
+      // Dark space background
+      ctx.fillStyle = "#0a0a1a";
+      ctx.fillRect(0, 0, w, h);
+
+      // Stars
+      for (const s of starsRef.current) {
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + s.size * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (stateRef.current === "playing") {
+        // Asteroids
+        for (const a of asteroidsRef.current) {
+          drawAsteroid(ctx, a);
+        }
+
+        // Lasers
+        for (const l of lasersRef.current) {
+          ctx.fillStyle = "#FF4444";
+          ctx.shadowColor = "#FF4444";
+          ctx.shadowBlur = 4;
+          ctx.fillRect(l.x, l.y, 3, 12);
+          ctx.shadowBlur = 0;
+        }
+
+        // Ship
+        const shipY = h - SHIP_H * PX - 30;
+        if (invulnRef.current <= 0 || Math.floor(invulnRef.current / 5) % 2 === 0) {
+          drawShip(ctx, shipXRef.current, shipY);
+        }
+
+        // Particles
+        for (const p of particlesRef.current) {
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // HUD
+      ctx.fillStyle = "#FFF";
+      ctx.font = "14px monospace";
+      ctx.textAlign = "left";
+      ctx.fillText("❤".repeat(Math.max(0, livesRef.current)), 12, 22);
+      ctx.textAlign = "right";
+      ctx.fillText(`Score: ${scoreRef.current}`, w - 12, 22);
+
+      // Game over
+      if (stateRef.current === "gameover") {
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "#FF4444";
+        ctx.font = "bold 28px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", w / 2, h / 2 - 30);
+
+        ctx.fillStyle = "#FFF";
+        ctx.font = "18px monospace";
+        ctx.fillText(`Score: ${scoreRef.current}`, w / 2, h / 2 + 10);
+
+        ctx.font = "12px monospace";
+        ctx.fillStyle = "#888";
+        ctx.fillText("click to restart", w / 2, h / 2 + 45);
+      }
+
+      requestAnimationFrame(loop);
+    };
+
+    const raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Mouse tracking
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const { w } = dimsRef.current;
+    let mx = e.clientX - rect.left - (SHIP_W * PX) / 2;
+    mx = Math.max(0, Math.min(mx, w - SHIP_W * PX));
+    shipXRef.current = mx;
+    mouseXRef.current = mx;
+  }, []);
+
+  const handleMouseDown = useCallback(() => {
+    if (stateRef.current === "playing") {
+      shootingRef.current = true;
+      shootTimerRef.current = 10;
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    shootingRef.current = false;
+    shootTimerRef.current = 0;
   }, []);
 
   const handleClick = useCallback(() => {
-    setStyleIndex((i) => (i + 1) % PET_COMPONENTS.length);
+    if (stateRef.current === "gameover") {
+      // Reset
+      scoreRef.current = 0;
+      livesRef.current = 3;
+      invulnRef.current = 0;
+      asteroidsRef.current = [];
+      lasersRef.current = [];
+      particlesRef.current = [];
+      spawnTimerRef.current = 0;
+      shootingRef.current = false;
+      setGameState("playing");
+      setUiTick((t) => t + 1);
+    }
   }, []);
-
-  useEffect(() => {
-    return () => clearTimeout(reactTimeoutRef.current);
-  }, []);
-
-  const isReact = state === "react";
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[300px] overflow-hidden cursor-pointer select-none"
-      onMouseEnter={handleMouseEnter}
+      className="relative w-full h-full min-h-[300px] overflow-hidden cursor-none select-none"
+      onMouseMove={handleMouseMove}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onClick={handleClick}
     >
-      <div
-        className="absolute top-1/2"
-        style={{
-          left: x,
-          translate: "0 -50%",
-        }}
-      >
-        <PetComponent isReact={isReact} state={state} />
-      </div>
+      <canvas ref={canvasRef} className="absolute inset-0" />
     </div>
   );
 }
