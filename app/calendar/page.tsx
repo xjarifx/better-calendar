@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/ui/loading";
 import { useSwipe } from "@/hooks/use-swipe";
-import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   format,
   addDays,
@@ -54,7 +54,7 @@ export default function CalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
@@ -133,11 +133,11 @@ export default function CalendarPage() {
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
-    setIsSheetOpen(true);
+    setIsDetailsOpen(true);
   };
 
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
     setSelectedEvent(null);
   };
 
@@ -146,7 +146,7 @@ export default function CalendarPage() {
     try {
       await api.deleteEvent(String(selectedEvent.id));
       setEvents(events.filter((e) => e.id !== selectedEvent.id));
-      setIsSheetOpen(false);
+      setIsDetailsOpen(false);
       setSelectedEvent(null);
     } catch (err) {
       setDeleteError("Failed to delete event");
@@ -249,59 +249,60 @@ export default function CalendarPage() {
         </button>
       </main>
 
-      {/* Event Detail Bottom Sheet */}
-      <BottomSheet
-        isOpen={isSheetOpen}
-        onClose={handleCloseSheet}
-        snapPoints={["50%", "90%"]}
+      {/* Event Detail Dialog */}
+      <Dialog
+        open={isDetailsOpen}
+        onOpenChange={(open) => !open && handleCloseDetails()}
       >
-        {selectedEvent && (
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              {selectedEvent.title}
-            </h3>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p>
-                {format(
-                  new Date(
-                    selectedEvent.start_time || selectedEvent.start_date,
-                  ),
-                  "PPP",
+        <DialogContent className="max-w-lg" showCloseButton>
+          {selectedEvent && (
+            <div>
+              <DialogTitle className="mb-2 text-xl font-semibold">
+                {selectedEvent.title}
+              </DialogTitle>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  {format(
+                    new Date(
+                      selectedEvent.start_time || selectedEvent.start_date,
+                    ),
+                    "PPP",
+                  )}
+                  {selectedEvent.start_time && (
+                    <span>
+                      {" "}
+                      at {format(new Date(selectedEvent.start_time), "p")}
+                    </span>
+                  )}
+                </p>
+                {selectedEvent.location && <p>📍 {selectedEvent.location}</p>}
+                {selectedEvent.description && (
+                  <p className="text-foreground">{selectedEvent.description}</p>
                 )}
-                {selectedEvent.start_time && (
-                  <span>
-                    {" "}
-                    at {format(new Date(selectedEvent.start_time), "p")}
-                  </span>
-                )}
-              </p>
-              {selectedEvent.location && <p>📍 {selectedEvent.location}</p>}
-              {selectedEvent.description && (
-                <p className="text-foreground">{selectedEvent.description}</p>
-              )}
+              </div>
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    router.push(`/events/${selectedEvent.id}`);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDeleteEvent}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2 mt-6">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  setIsSheetOpen(false);
-                  router.push(`/events/${selectedEvent.id}`);
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={handleDeleteEvent}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        )}
-      </BottomSheet>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
