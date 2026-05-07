@@ -34,11 +34,13 @@ export interface ExtractedEvent {
 interface ExtractedEventsProps {
   events: ExtractedEvent[];
   onClear: () => void;
+  hideActionBar?: boolean;
 }
 
 export default function ExtractedEvents({
   events,
   onClear,
+  hideActionBar,
 }: ExtractedEventsProps) {
   const router = useRouter();
   const [editableEvents, setEditableEvents] = useState<ExtractedEvent[]>(
@@ -287,18 +289,20 @@ export default function ExtractedEvents({
         ))}
       </div>
 
-      <div className="flex gap-2 rounded-2xl border border-border/70 bg-card/60 p-4">
-        <Button
-          onClick={handleSaveAll}
-          disabled={saving || editableEvents.length === 0}
-          className="h-10 rounded-xl"
-        >
-          {saving ? "Saving..." : `Save All ${editableEvents.length} Event(s)`}
-        </Button>
-        <Button variant="outline" onClick={onClear} className="h-10 rounded-xl">
-          Cancel
-        </Button>
-      </div>
+      {!hideActionBar && (
+        <div className="flex gap-2 rounded-2xl border border-border/70 bg-card/60 p-4">
+          <Button
+            onClick={handleSaveAll}
+            disabled={saving || editableEvents.length === 0}
+            className="h-10 rounded-xl"
+          >
+            {saving ? "Saving..." : `Save All ${editableEvents.length} Event(s)`}
+          </Button>
+          <Button variant="outline" onClick={onClear} className="h-10 rounded-xl">
+            Cancel
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

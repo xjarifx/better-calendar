@@ -158,11 +158,53 @@ export default function EventInputPage() {
     setError('')
   }
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const handleSaveAllEvents = async () => {
+    const invalid = extractedEvents.some((e) => !e.title || !e.startDate);
+    if (invalid) {
+      setSaveError('All events must have a title and start date');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    for (const event of extractedEvents) {
+      try {
+        const eventData: Record<string, unknown> = {
+          title: event.title,
+          startDate: event.startDate,
+        };
+        if (event.startTime) eventData.startTime = event.startTime;
+        if (event.endDate) eventData.endDate = event.endDate;
+        if (event.endTime) eventData.endTime = event.endTime;
+        if (event.location) eventData.location = event.location;
+        if (event.description) eventData.description = event.description;
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(eventData),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to create event');
+        }
+      } catch (err) {
+        setSaveError(
+          `Failed to save "${event.title}": ${err instanceof Error ? err.message : 'Unknown error'}`,
+        );
+        setSaving(false);
+        return;
+      }
+    }
+    router.push('/calendar');
+  };
+
   if (!isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 px-4 py-3 max-w-7xl mx-auto w-full">
+      <main className="flex-1 px-4 py-3 max-w-5xl mx-auto w-full">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.push('/calendar')}
@@ -183,102 +225,120 @@ export default function EventInputPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium block mb-1.5">
-                Paste Event Notices
-              </label>
-              <textarea
-                className="w-full min-h-[300px] px-3 py-2 rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-ring/50 font-mono text-sm"
-                value={text}
-                onChange={e => setText(e.target.value)}
-                placeholder="Paste your event notices here...&#10;&#10;Example:&#10;Team Meeting&#10;January 15, 2026 at 2:00 PM&#10;Conference Room B&#10;&#10;Birthday Party&#10;Feb 20, 2026&#10;123 Main Street"
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-              <div className="flex-1">
-                <label className="text-sm font-medium block mb-1.5">
-                  AI Model
-                </label>
-                {loading ? (
-                  <InlineLoading text="Loading models..." />
-                ) : (
-                  <div ref={dropdownRef} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-sm text-left flex items-center justify-between"
-                    >
-                      <span>
-                        {models.find(m => m.id === selectedModel)?.name || 'Select a model'}
-                      </span>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </button>
-
-                    {isDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                          Recommended
-                        </div>
-                        {models
-                          .filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
-                          .map(model => (
-                            <div
-                              key={model.id}
-                              onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
-                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
-                            >
-                              {model.name} ({model.context} context)
-                            </div>
-                          ))
-                        }
-
-                        <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 border-t border-input">
-                          All AI Models
-                        </div>
-                        {models
-                          .filter(m => !RECOMMENDED_MODEL_IDS.includes(m.id))
-                          .map(model => (
-                            <div
-                              key={model.id}
-                              onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
-                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
-                            >
-                              {model.name} ({model.context} context)
-                            </div>
-                          ))
-                        }
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleExtract}
-                  disabled={loading || !selectedModel || (!extracting && !text.trim())}
-                  variant={extracting ? 'destructive' : 'default'}
-                  className="flex-1 sm:flex-none rounded-lg"
-                >
-                  {extracting ? 'Cancel' : 'Extract'}
-                </Button>
-                <Button variant="outline" onClick={handleClear} className="flex-1 sm:flex-none rounded-lg">
-                  Clear
-                </Button>
-              </div>
-            </div>
+        {saveError && (
+          <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm mb-4">
+            {saveError}
           </div>
+        )}
 
+        <div className="space-y-4">
           <div>
-            {extractedEvents.length > 0 && (
-              <ExtractedEvents
-                events={extractedEvents}
-                onClear={() => setExtractedEvents([])}
-              />
-            )}
+            <label className="text-sm font-medium block mb-1.5">
+              Paste Event Notices
+            </label>
+            <textarea
+              className="w-full min-h-[150px] px-3 py-2 rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-ring/50 font-mono text-sm"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Paste your event notices here...&#10;&#10;Example:&#10;Team Meeting&#10;January 15, 2026 at 2:00 PM&#10;Conference Room B&#10;&#10;Birthday Party&#10;Feb 20, 2026&#10;123 Main Street"
+            />
           </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <div className="flex-1">
+              <label className="text-sm font-medium block mb-1.5">
+                AI Model
+              </label>
+              {loading ? (
+                <InlineLoading text="Loading models..." />
+              ) : (
+                <div ref={dropdownRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-sm text-left flex items-center justify-between"
+                  >
+                    <span>
+                      {models.find(m => m.id === selectedModel)?.name || 'Select a model'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                        Recommended
+                      </div>
+                      {models
+                        .filter(m => RECOMMENDED_MODEL_IDS.includes(m.id))
+                        .map(model => (
+                          <div
+                            key={model.id}
+                            onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
+                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
+                          >
+                            {model.name} ({model.context} context)
+                          </div>
+                        ))
+                      }
+
+                      <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 border-t border-input">
+                        All AI Models
+                      </div>
+                      {models
+                        .filter(m => !RECOMMENDED_MODEL_IDS.includes(m.id))
+                        .map(model => (
+                          <div
+                            key={model.id}
+                            onClick={() => { setSelectedModel(model.id); setIsDropdownOpen(false) }}
+                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted ${selectedModel === model.id ? 'bg-muted/50 font-medium' : ''}`}
+                          >
+                            {model.name} ({model.context} context)
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleExtract}
+                disabled={loading || !selectedModel || (!extracting && !text.trim())}
+                variant={extracting ? 'destructive' : 'default'}
+                className="flex-1 sm:flex-none rounded-lg"
+              >
+                {extracting ? 'Cancel' : 'Extract'}
+              </Button>
+              <Button variant="outline" onClick={handleClear} className="flex-1 sm:flex-none rounded-lg">
+                Clear
+              </Button>
+            </div>
+          </div>
+
+          {extractedEvents.length > 0 && (
+            <div className="flex gap-2 rounded-2xl border border-border/70 bg-card/60 p-4">
+              <Button
+                onClick={handleSaveAllEvents}
+                disabled={saving || extractedEvents.length === 0}
+                className="h-10 rounded-xl"
+              >
+                {saving ? "Saving..." : `Save All ${extractedEvents.length} Event(s)`}
+              </Button>
+              <Button variant="outline" onClick={() => setExtractedEvents([])} className="h-10 rounded-xl">
+                Cancel
+              </Button>
+            </div>
+          )}
+
+          {extractedEvents.length > 0 && (
+            <ExtractedEvents
+              events={extractedEvents}
+              onClear={() => setExtractedEvents([])}
+              hideActionBar
+            />
+          )}
         </div>
       </main>
     </div>
