@@ -13,7 +13,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "./ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 
 function formatDateTimeInput(value: string | Date | null | undefined) {
   if (!value) return "";
@@ -112,6 +112,16 @@ export default function RightPanel() {
 
         {rightPanelMode === "event-details" && selectedEvent && (
           <div>
+            <button
+              onClick={() => {
+                setRightPanelMode("day-view");
+                setSelectedEvent(null);
+              }}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm mb-3"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to list
+            </button>
             <h3 className="text-lg font-semibold mb-2">{selectedEvent.title}</h3>
             <div className="text-sm text-muted-foreground mb-3">
               {selectedEvent.start_date &&
@@ -144,6 +154,10 @@ export default function RightPanel() {
               <EventForm
                 mode="edit"
                 eventId={String(selectedEvent.id)}
+                onCancel={() => {
+                  setRightPanelMode("day-view");
+                  setSelectedEvent(null);
+                }}
                 initialData={{
                   title: selectedEvent.title || "",
                   startDate: selectedEvent.start_date
