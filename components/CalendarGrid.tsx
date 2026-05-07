@@ -406,7 +406,10 @@ export default function CalendarGrid({
   const selectedMonthLabel = format(currentMonth, "MMMM yyyy");
 
   return (
-    <section className="relative flex h-full min-h-screen flex-col bg-background px-6 py-5">
+    <section
+      data-tour="calendar"
+      className="relative flex h-full min-h-screen flex-col bg-background px-6 py-5"
+    >
       <div className="mb-5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-inner shadow-primary/10">

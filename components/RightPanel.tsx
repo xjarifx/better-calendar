@@ -10,6 +10,14 @@ import { Button } from "./ui/button";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
+function formatDateTimeInput(value: string | Date | null | undefined) {
+  if (!value) return "";
+
+  return typeof value === "string"
+    ? value.slice(0, 16)
+    : value.toISOString().slice(0, 16);
+}
+
 export default function RightPanel() {
   const { isAuthenticated } = useAuth();
   const {
@@ -80,11 +88,11 @@ export default function RightPanel() {
   const handleDuplicate = async (evt: any) => {
     const payload: Record<string, unknown> = {
       title: evt.title,
-      startDate: evt.startDate,
+      startDate: evt.start_date,
     };
-    if (evt.startTime) payload.startTime = evt.startTime;
-    if (evt.endDate) payload.endDate = evt.endDate;
-    if (evt.endTime) payload.endTime = evt.endTime;
+    if (evt.start_time) payload.startTime = evt.start_time;
+    if (evt.end_date) payload.endDate = evt.end_date;
+    if (evt.end_time) payload.endTime = evt.end_time;
     if (evt.location) payload.location = evt.location;
     if (evt.description) payload.description = evt.description;
     try {
@@ -100,7 +108,7 @@ export default function RightPanel() {
   return (
     <aside className="fixed right-0 top-0 h-full z-30 w-[400px] border-l border-border bg-right-panel-bg p-4">
       {rightPanelMode === "ai-input" && (
-        <div>
+        <div data-tour="ai-input">
           <h3 className="text-lg font-semibold mb-2">AI Input</h3>
           <textarea
             className="w-full min-h-[140px] rounded-md bg-background p-3 text-sm border border-border"
@@ -183,10 +191,10 @@ export default function RightPanel() {
         <div>
           <h3 className="text-lg font-semibold mb-2">{selectedEvent.title}</h3>
           <div className="text-sm text-muted-foreground mb-3">
-            {selectedEvent.startDate &&
-              new Date(selectedEvent.startDate).toDateString()}
-            {selectedEvent.startTime &&
-              ` · ${new Date(selectedEvent.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+            {selectedEvent.start_date &&
+              new Date(selectedEvent.start_date).toDateString()}
+            {selectedEvent.start_time &&
+              ` · ${new Date(selectedEvent.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
           </div>
 
           <div className="mb-3">
@@ -221,14 +229,16 @@ export default function RightPanel() {
               eventId={String(selectedEvent.id)}
               initialData={{
                 title: selectedEvent.title || "",
-                startDate: selectedEvent.startDate
-                  ? new Date(selectedEvent.startDate).toISOString().slice(0, 10)
+                startDate: selectedEvent.start_date
+                  ? new Date(selectedEvent.start_date)
+                      .toISOString()
+                      .slice(0, 10)
                   : "",
-                startTime: selectedEvent.startTime || "",
-                endDate: selectedEvent.endDate
-                  ? new Date(selectedEvent.endDate).toISOString().slice(0, 10)
+                startTime: formatDateTimeInput(selectedEvent.start_time),
+                endDate: selectedEvent.end_date
+                  ? new Date(selectedEvent.end_date).toISOString().slice(0, 10)
                   : "",
-                endTime: selectedEvent.endTime || "",
+                endTime: formatDateTimeInput(selectedEvent.end_time),
                 location: selectedEvent.location || "",
                 description: selectedEvent.description || "",
               }}
