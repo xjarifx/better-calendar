@@ -10,7 +10,10 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+      const publicPaths = ['/login', '/register', '/api-docs']
+      if (!publicPaths.includes(window.location.pathname)) {
+        window.location.href = '/login'
+      }
     }
     throw new Error('Unauthorized')
   }

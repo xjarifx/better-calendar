@@ -6,6 +6,11 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
+  // Let _next/data requests through — client-side auth handles redirects
+  if (pathname.startsWith('/_next/data')) {
+    return NextResponse.next()
+  }
+
   // Public paths that don't require auth
   const publicPaths = ['/login', '/register', '/api-docs']
   const isPublicPath = publicPaths.some(p => pathname === p)

@@ -45,8 +45,10 @@ export default function RightPanel() {
   };
 
   useEffect(() => {
-    refreshEvents();
-  }, []);
+    if (isAuthenticated) {
+      refreshEvents();
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) return null;
 

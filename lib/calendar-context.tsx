@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { events as Event } from "@prisma/client";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export type RightPanelMode = "day-view" | "event-details" | "extracted-events" | "empty";
 
@@ -35,8 +36,10 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [rightPanelMode, setRightPanelMode] =
     useState<RightPanelMode>("empty");
   const [firstDayOfWeek, setFirstDayOfWeek] = useState(0);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) return
     api
       .getUserProfile()
       .then((data) => {
@@ -44,7 +47,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
           setFirstDayOfWeek(data.firstDayOfWeek);
       })
       .catch(() => {});
-  }, []);
+  }, [isAuthenticated]);
 
   const navigateToday = useCallback(() => {
     setSelectedDate(new Date());
