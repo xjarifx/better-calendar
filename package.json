@@ -2,9 +2,14 @@
   "name": "better-calender",
   "version": "0.1.0-beta.1",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
+    "dev:mobile": "npm run dev -w packages/mobile",
     "build": "next build",
+    "build:mobile": "npm run build -w packages/mobile",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
