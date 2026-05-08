@@ -521,7 +521,7 @@ export default function CalendarGrid({
 
   return (
     <section
-      className="relative flex h-full flex-col bg-background px-6 py-5"
+      className="relative flex min-h-0 flex-1 flex-col bg-background px-6 py-5"
     >
       <div className="mb-3 flex items-center justify-between gap-2 md:mb-5 md:gap-4">
         <div className="flex items-center gap-2 md:gap-3">
@@ -594,10 +594,10 @@ export default function CalendarGrid({
         <>
           {/* Mobile compact grid */}
           <div
-            className="flex flex-1 flex-col overflow-hidden md:hidden touch-pan-y"
+            className="flex flex-1 flex-col overflow-auto md:hidden touch-pan-y"
             {...swipeHandlers}
           >
-            <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-hidden rounded-xl border border-border/60 bg-card/70 shadow-lg">
+            <div className="grid flex-1 grid-cols-7 auto-rows-fr rounded-xl border border-border/60 bg-card/70 shadow-lg">
               {monthDays.map((date) => {
                 const dayKey = format(date, "yyyy-MM-dd");
                 const dayEvents = eventsByDay.get(dayKey) ?? [];
@@ -616,14 +616,14 @@ export default function CalendarGrid({
           </div>
 
           {/* Desktop grid with DnD */}
-          <div className="hidden md:block">
+          <div className="hidden flex-1 flex-col overflow-auto md:flex">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
-              <div ref={gridRef} className="grid flex-1 grid-cols-7 overflow-hidden rounded-3xl border border-border/80 bg-card/70 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+              <div ref={gridRef} className="grid flex-1 grid-cols-7 rounded-3xl border border-border/80 bg-card/70 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
                 {monthDays.map((date) => {
                   const dayKey = format(date, "yyyy-MM-dd");
                   const dayEvents = eventsByDay.get(dayKey) ?? [];
