@@ -5,8 +5,6 @@ import { AuthProvider } from "@/lib/auth-context";
 import { CalendarProvider } from "@/lib/calendar-context";
 import Sidebar from "@/components/Sidebar";
 import RightPanel from "@/components/RightPanel";
-import OnboardingTour from "@/components/OnboardingTour";
-import MobileNav from "@/components/MobileNav";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -38,7 +36,6 @@ export default function RootLayout({
               </main>
               <MobileNav />
               <RightPanel />
-              <OnboardingTour />
             </div>
           </CalendarProvider>
         </AuthProvider>
