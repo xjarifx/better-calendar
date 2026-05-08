@@ -33,7 +33,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-sidebar transition-all duration-300"
+      className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col border-r border-border bg-sidebar transition-all duration-300 md:flex"
     >
       <div className="border-b border-border px-4 py-4">
         <Link

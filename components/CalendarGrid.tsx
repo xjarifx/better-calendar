@@ -521,7 +521,7 @@ export default function CalendarGrid({
 
   return (
     <section
-      className="relative flex h-full min-h-screen flex-col bg-background px-6 py-5"
+      className="relative flex h-full flex-col bg-background px-6 py-5"
     >
       <div className="mb-3 flex items-center justify-between gap-2 md:mb-5 md:gap-4">
         <div className="flex items-center gap-2 md:gap-3">
