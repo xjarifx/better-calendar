@@ -29,7 +29,7 @@ export default function MobileNav() {
   const isActive = (href: string) => href === activeHref;
 
   return (
-    <nav className="flex h-16 items-center border-t border-border bg-background px-2 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center border-t border-border bg-background px-2 md:hidden">
       {navItems.map((item) => (
         <Link
           key={item.href}

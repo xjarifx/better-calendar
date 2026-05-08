@@ -31,12 +31,12 @@ export default function RootLayout({
           <CalendarProvider>
             <div className="relative min-h-screen w-full [--sidebar-width:16rem]">
               <Sidebar />
-              <main className="min-h-screen bg-background ml-0 mr-0 md:ml-[var(--sidebar-width)] md:mr-[400px] transition-all duration-300 flex flex-col md:block">
+              <main className="min-h-screen bg-background ml-0 mr-0 md:ml-[var(--sidebar-width)] md:mr-[400px] transition-all duration-300 flex flex-col md:block pb-16 md:pb-0">
                 <div className="flex-1 md:flex-none flex flex-col md:block">
                   {children}
                 </div>
-                <MobileNav />
               </main>
+              <MobileNav />
               <RightPanel />
               <OnboardingTour />
             </div>
