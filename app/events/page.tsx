@@ -142,7 +142,7 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 px-4 py-3 max-w-7xl mx-auto w-full">
+      <main className="flex-1 px-4 py-3 pb-16 md:pb-3 max-w-7xl mx-auto w-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <button
