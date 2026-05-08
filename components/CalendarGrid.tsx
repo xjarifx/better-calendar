@@ -230,13 +230,11 @@ function MobileDayCell({
   events,
   isOutsideMonth,
   onClick,
-  onEventClick,
 }: {
   date: Date;
   events: CalendarEvent[];
   isOutsideMonth: boolean;
   onClick: () => void;
-  onEventClick: (event: CalendarEvent) => void;
 }) {
   return (
     <div
@@ -249,9 +247,8 @@ function MobileDayCell({
           onClick();
         }
       }}
-      onContextMenu={(e) => e.preventDefault()}
       className={cn(
-        "relative flex min-h-[44px] flex-col items-center border border-border/60 p-1 text-left transition-colors duration-150 active:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        "relative flex flex-col items-center justify-center border border-border/60 transition-colors duration-150 active:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         isOutsideMonth && "bg-muted/5 text-muted-foreground/60",
       )}
     >
@@ -268,16 +265,10 @@ function MobileDayCell({
       {events.length > 0 && (
         <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
           {events.slice(0, 4).map((event) => (
-            <button
+            <div
               key={event.id}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEventClick(event);
-              }}
               className="h-1.5 w-1.5 rounded-full"
               style={{ backgroundColor: getEventColor(event.title).borderColor }}
-              aria-label={event.title}
             />
           ))}
           {events.length > 4 && (
@@ -604,10 +595,10 @@ export default function CalendarGrid({
         <>
           {/* Mobile compact grid */}
           <div
-            className="touch-pan-y md:hidden"
+            className="flex flex-1 flex-col overflow-hidden md:hidden touch-pan-y"
             {...swipeHandlers}
           >
-            <div className="grid flex-1 grid-cols-7 overflow-hidden rounded-xl border border-border/60 bg-card/70 shadow-lg">
+            <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-hidden rounded-xl border border-border/60 bg-card/70 shadow-lg">
               {monthDays.map((date) => {
                 const dayKey = format(date, "yyyy-MM-dd");
                 const dayEvents = eventsByDay.get(dayKey) ?? [];
@@ -619,7 +610,6 @@ export default function CalendarGrid({
                     events={dayEvents}
                     isOutsideMonth={!isSameMonth(date, currentMonth)}
                     onClick={() => handleDayClick(date)}
-                    onEventClick={handleEventClick}
                   />
                 );
               })}
