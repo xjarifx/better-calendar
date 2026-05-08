@@ -8,7 +8,8 @@
     "userInterfaceStyle": "dark",
     "scheme": "better-calendar",
     "splash": {
-      "backgroundColor": "#0a0a0a"
+      "backgroundColor": "#0a0a0a",
+      "image": "./assets/splash-icon.png"
     },
     "ios": {
       "supportsTablet": true,
@@ -16,7 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0a0a0a"
+        "backgroundColor": "#0a0a0a",
+        "foregroundImage": "./assets/adaptive-icon.png"
       },
       "package": "com.bettercalendar.app"
     },
@@ -29,7 +31,7 @@
       "typedRoutes": true
     },
     "updates": {
-      "url": "https://u.expo.dev/your-project-id",
+      "url": "https://u.expo.dev/b553bfae-29d3-4b91-86c4-18ea8b1a4cf9",
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
@@ -39,7 +41,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "b553bfae-29d3-4b91-86c4-18ea8b1a4cf9"
       }
     }
   }

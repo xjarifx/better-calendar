@@ -5,7 +5,8 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "android": {
@@ -14,7 +15,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://better-calendar-one.vercel.app"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "android": {
@@ -23,7 +25,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://better-calendar-one.vercel.app"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'better-calendar',
   extra: {
     eas: {
-      projectId: process.env.EAS_PROJECT_ID || 'your-eas-project-id',
+      projectId: 'b553bfae-29d3-4b91-86c4-18ea8b1a4cf9',
     },
   },
 })
