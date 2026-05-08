@@ -457,7 +457,6 @@ export default function CalendarGrid({
 
   return (
     <section
-      data-tour="calendar"
       className="relative flex h-full min-h-screen flex-col bg-background px-6 py-5"
     >
       <div className="mb-5 flex items-center justify-between gap-4">

@@ -35,7 +35,6 @@ export default function Sidebar() {
 
   return (
     <aside
-      data-tour="sidebar"
       className="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-sidebar transition-all duration-300"
     >
       <div className="border-b border-border px-4 py-4">
