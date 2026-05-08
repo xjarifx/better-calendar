@@ -40,6 +40,7 @@ import { useCalendar } from "@/lib/calendar-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import SearchModal from "@/components/SearchModal";
+import { useSwipe } from "@/hooks/use-swipe";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 type RawEvent = {
@@ -106,7 +107,7 @@ function getEventColor(title: string) {
   };
 }
 
-function DayCell({
+function DesktopDayCell({
   date,
   events,
   isOutsideMonth,
@@ -150,8 +151,8 @@ function DayCell({
     >
       <div className="mb-2 flex items-center justify-between">
         <span
-className={cn(
-        "text-xs font-semibold tabular-nums",
+          className={cn(
+            "text-xs font-semibold tabular-nums",
             isSameDay(date, new Date()) &&
               "rounded-full bg-primary px-2 py-0.5 text-primary-foreground",
           )}
@@ -164,7 +165,7 @@ className={cn(
         {visibleEvents.map((event) => {
           const isDragging = draggingEventId === `event-${event.id}`;
           return (
-            <DraggableEventBar
+            <DesktopDraggableEventBar
               key={event.id}
               event={event}
               isDragging={isDragging}
@@ -183,7 +184,7 @@ className={cn(
   );
 }
 
-function DraggableEventBar({
+function DesktopDraggableEventBar({
   event,
   onClick,
   isDragging,
@@ -224,6 +225,72 @@ function DraggableEventBar({
   );
 }
 
+function MobileDayCell({
+  date,
+  events,
+  isOutsideMonth,
+  onClick,
+  onEventClick,
+}: {
+  date: Date;
+  events: CalendarEvent[];
+  isOutsideMonth: boolean;
+  onClick: () => void;
+  onEventClick: (event: CalendarEvent) => void;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+      className={cn(
+        "relative flex min-h-[44px] flex-col items-center border border-border/60 p-1 text-left transition-colors duration-150 active:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        isOutsideMonth && "bg-muted/5 text-muted-foreground/60",
+      )}
+    >
+      <span
+        className={cn(
+          "text-xs font-semibold tabular-nums leading-none",
+          isSameDay(date, new Date()) &&
+            "flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground",
+        )}
+      >
+        {format(date, "d")}
+      </span>
+
+      {events.length > 0 && (
+        <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
+          {events.slice(0, 4).map((event) => (
+            <button
+              key={event.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event);
+              }}
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: getEventColor(event.title).borderColor }}
+              aria-label={event.title}
+            />
+          ))}
+          {events.length > 4 && (
+            <span className="text-[9px] leading-none text-muted-foreground">
+              +{events.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CalendarGrid({
   onSearchClick,
 }: {
@@ -252,6 +319,12 @@ export default function CalendarGrid({
       activationConstraint: { distance: 8 },
     }),
   );
+
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => setCurrentMonth((c) => addMonths(c, 1)),
+    onSwipeRight: () => setCurrentMonth((c) => subMonths(c, 1)),
+    threshold: 40,
+  });
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -458,24 +531,24 @@ export default function CalendarGrid({
   return (
     <section
       data-tour="calendar"
-      className="relative flex h-full min-h-screen flex-col bg-background px-6 py-5"
+      className="relative flex h-full min-h-screen flex-col bg-background px-3 py-3 md:px-6 md:py-5"
     >
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-inner shadow-primary/10">
-            <Calendar className="h-5 w-5" />
+      <div className="mb-3 flex items-center justify-between gap-2 md:mb-5 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary shadow-inner shadow-primary/10 md:h-11 md:w-11 md:rounded-2xl">
+            <Calendar className="h-4 w-4 md:h-5 md:w-5" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+            <p className="hidden text-xs uppercase tracking-[0.24em] text-muted-foreground md:block">
               Month view
             </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground transition-all duration-200">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground transition-all duration-200 md:text-2xl">
               {selectedMonthLabel}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           <Button
             variant="outline"
             size="icon-sm"
@@ -509,14 +582,14 @@ export default function CalendarGrid({
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-7 overflow-hidden rounded-2xl border border-border/80 bg-card/80 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground shadow-sm">
+      <div className="mb-2 grid grid-cols-7 overflow-hidden rounded-xl border border-border/60 bg-card/80 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground shadow-sm md:mb-4 md:rounded-2xl md:text-xs md:tracking-[0.2em]">
         {(() => {
           const base = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
           return [...base.slice(firstDayOfWeek), ...base.slice(0, firstDayOfWeek)];
         })().map((day) => (
           <div
             key={day}
-            className="border-r border-border/60 px-3 py-3 last:border-r-0"
+            className="border-r border-border/60 px-1 py-2 text-center last:border-r-0 md:px-3 md:py-3"
           >
             {day}
           </div>
@@ -524,60 +597,89 @@ export default function CalendarGrid({
       </div>
 
       {loading ? (
-        <div className="flex flex-1 items-center justify-center rounded-3xl border border-border/80 bg-card/40 text-sm text-muted-foreground">
+        <div className="flex flex-1 items-center justify-center rounded-xl border border-border/60 bg-card/40 text-sm text-muted-foreground md:rounded-3xl">
           Loading calendar...
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div ref={gridRef} className="grid flex-1 grid-cols-7 overflow-hidden rounded-3xl border border-border/80 bg-card/70 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
-            {monthDays.map((date) => {
-              const dayKey = format(date, "yyyy-MM-dd");
-              const dayEvents = eventsByDay.get(dayKey) ?? [];
+        <>
+          {/* Mobile compact grid */}
+          <div
+            className="touch-pan-y md:hidden"
+            {...swipeHandlers}
+          >
+            <div className="grid flex-1 grid-cols-7 overflow-hidden rounded-xl border border-border/60 bg-card/70 shadow-lg">
+              {monthDays.map((date) => {
+                const dayKey = format(date, "yyyy-MM-dd");
+                const dayEvents = eventsByDay.get(dayKey) ?? [];
 
-              return (
-                <DayCell
-                  key={dayKey}
-                  date={date}
-                  events={dayEvents}
-                  isOutsideMonth={!isSameMonth(date, currentMonth)}
-                  onClick={() => handleDayClick(date)}
-                  onEventClick={handleEventClick}
-                  draggingEventId={draggingEventId}
-                  maxVisible={maxVisible}
-                />
-              );
-            })}
+                return (
+                  <MobileDayCell
+                    key={dayKey}
+                    date={date}
+                    events={dayEvents}
+                    isOutsideMonth={!isSameMonth(date, currentMonth)}
+                    onClick={() => handleDayClick(date)}
+                    onEventClick={handleEventClick}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          <DragOverlay dropAnimation={null}>
-            {activeEvent ? (
-              <div
-                className="flex items-center gap-2 rounded-md border-l-4 px-2 py-1.5 text-left text-[11px] shadow-2xl"
-                style={{
-                  ...getEventColor(activeEvent.title),
-                  cursor: "grabbing",
-                  transform: "scale(1.05)",
-                  pointerEvents: "none",
-                }}
-              >
-                <span className="h-2.5 w-2.5 rounded-full bg-current/80" />
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {activeEvent.title}
-                </span>
-                {activeEvent.startTime && (
-                  <span className="shrink-0 text-current/80">
-                    {format(activeEvent.startTime, "p")}
-                  </span>
-                )}
+          {/* Desktop grid with DnD */}
+          <div className="hidden md:block">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div ref={gridRef} className="grid flex-1 grid-cols-7 overflow-hidden rounded-3xl border border-border/80 bg-card/70 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+                {monthDays.map((date) => {
+                  const dayKey = format(date, "yyyy-MM-dd");
+                  const dayEvents = eventsByDay.get(dayKey) ?? [];
+
+                  return (
+                    <DesktopDayCell
+                      key={dayKey}
+                      date={date}
+                      events={dayEvents}
+                      isOutsideMonth={!isSameMonth(date, currentMonth)}
+                      onClick={() => handleDayClick(date)}
+                      onEventClick={handleEventClick}
+                      draggingEventId={draggingEventId}
+                      maxVisible={maxVisible}
+                    />
+                  );
+                })}
               </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+
+              <DragOverlay dropAnimation={null}>
+                {activeEvent ? (
+                  <div
+                    className="flex items-center gap-2 rounded-md border-l-4 px-2 py-1.5 text-left text-[11px] shadow-2xl"
+                    style={{
+                      ...getEventColor(activeEvent.title),
+                      cursor: "grabbing",
+                      transform: "scale(1.05)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-current/80" />
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {activeEvent.title}
+                    </span>
+                    {activeEvent.startTime && (
+                      <span className="shrink-0 text-current/80">
+                        {format(activeEvent.startTime, "p")}
+                      </span>
+                    )}
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        </>
       )}
 
       {isSearchOpen && (

@@ -30,7 +30,7 @@ export default function RootLayout({
           <CalendarProvider>
             <div className="relative min-h-screen w-full [--sidebar-width:16rem]">
               <Sidebar />
-              <main className="min-h-screen bg-background ml-[var(--sidebar-width)] mr-[400px] transition-all duration-300">
+              <main className="min-h-screen bg-background ml-0 mr-0 md:ml-[var(--sidebar-width)] md:mr-[400px] transition-all duration-300 pb-16 md:pb-0">
                 {children}
               </main>
               <RightPanel />

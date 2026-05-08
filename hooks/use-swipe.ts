@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 interface SwipeHandlers {
   onTouchStart: (e: React.TouchEvent) => void
@@ -23,26 +23,26 @@ export function useSwipe({
   onSwipeDown,
   threshold = 50,
 }: UseSwipeOptions): SwipeHandlers {
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null)
-  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const touchEnd = useRef<{ x: number; y: number } | null>(null)
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.targetTouches[0]
-    setTouchStart({ x: touch.clientX, y: touch.clientY })
-    setTouchEnd(null)
+    touchStart.current = { x: touch.clientX, y: touch.clientY }
+    touchEnd.current = null
   }, [])
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     const touch = e.targetTouches[0]
-    setTouchEnd({ x: touch.clientX, y: touch.clientY })
+    touchEnd.current = { x: touch.clientX, y: touch.clientY }
   }, [])
 
   const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (!touchStart || !touchEnd) return
+    () => {
+      if (!touchStart.current || !touchEnd.current) return
 
-      const deltaX = touchEnd.x - touchStart.x
-      const deltaY = touchEnd.y - touchStart.y
+      const deltaX = touchEnd.current.x - touchStart.current.x
+      const deltaY = touchEnd.current.y - touchStart.current.y
       const absDeltaX = Math.abs(deltaX)
       const absDeltaY = Math.abs(deltaY)
 
@@ -60,10 +60,10 @@ export function useSwipe({
         }
       }
 
-      setTouchStart(null)
-      setTouchEnd(null)
+      touchStart.current = null
+      touchEnd.current = null
     },
-    [touchStart, touchEnd, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold]
+    [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold],
   )
 
   return {
