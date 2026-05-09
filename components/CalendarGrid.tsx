@@ -163,11 +163,11 @@ function DesktopDayCell({
       </div>
 
       {mode === "dot" ? (
-        <div className="flex flex-wrap gap-0.5 content-start">
+        <div className="flex flex-wrap gap-1 content-start">
           {events.slice(0, 20).map((event) => (
             <div
               key={event.id}
-              className="h-2 w-2 rounded-full"
+              className="h-3 w-3 rounded-full"
               style={{ backgroundColor: getEventColor(event.title).borderColor }}
             />
           ))}
@@ -289,7 +289,7 @@ function MobileDayCell({
           {events.slice(0, 4).map((event) => (
             <div
               key={event.id}
-              className="h-1.5 w-1.5 rounded-full"
+              className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: getEventColor(event.title).borderColor }}
             />
           ))}
