@@ -321,7 +321,7 @@ export default function EventInputPage() {
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-sm text-left flex items-center justify-between"
+                    className="w-full h-8 px-3 border border-input rounded-lg bg-background text-sm text-left flex items-center justify-between"
                   >
                     <span>
                       {models.find(m => m.id === selectedModel)?.name || 'Select a model'}
