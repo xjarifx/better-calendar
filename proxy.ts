@@ -12,7 +12,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Public paths that don't require auth
-  const publicPaths = ['/login', '/register', '/api-docs']
+  const publicPaths = ['/', '/login', '/register', '/api-docs']
   const isPublicPath = publicPaths.some(p => pathname === p)
 
   // API routes handle their own auth via getAuthUser
