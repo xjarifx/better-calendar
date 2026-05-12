@@ -2,123 +2,407 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-const PX = 6;
-const SHIP_W = 10;
-const SHIP_H = 8;
+const BOARD_W = 10;
+const BOARD_H = 20;
+const CELL = 20;
 
-type GameState = "playing" | "gameover";
+type Difficulty = "easy" | "medium" | "hard";
 
-interface Asteroid {
-  id: number;
-  x: number;
-  y: number;
-  r: number;
-  speed: number;
-  rot: number;
-}
-
-interface Laser {
-  x: number;
-  y: number;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  color: string;
-}
-
-interface Star {
-  x: number;
-  y: number;
-  speed: number;
-  size: number;
-}
-
-const SHIP_SPRITE: (string | null)[][] = [
-  [null, null, null, null, "b", "b", null, null, null, null],
-  [null, null, null, "b", null, null, "b", null, null, null],
-  [null, null, "b", null, "y", "y", null, "b", null, null],
-  [null, "b", null, null, null, null, null, null, "b", null],
-  ["b", null, null, null, null, null, null, null, null, "b"],
-  [null, "b", null, null, null, null, null, null, "b", null],
-  [null, null, "b", null, null, null, null, "b", null, null],
-  [null, null, null, "b", null, null, "b", null, null, null],
-];
-
-const SHIP_COLORS: Record<string, string> = {
-  b: "#4A90D9",
-  y: "#FFD700",
+const DROP_INTERVALS: Record<Difficulty, number> = {
+  easy: 700,
+  medium: 400,
+  hard: 180,
 };
 
-const ASTEROID_COLORS = ["#8B8B8B", "#7A7A7A", "#9A9A9A", "#6B6B6B"];
+const COLORS: Record<string, string> = {
+  I: "#4DD2FF",
+  O: "#FFD700",
+  T: "#B388FF",
+  S: "#66BB6A",
+  Z: "#EF5350",
+  J: "#42A5F5",
+  L: "#FFA726",
+};
 
-let nextId = 1;
+const PIECES: { shape: number[][]; name: string }[] = [
+  {
+    name: "I",
+    shape: [
+      [0, 0, 0, 0],
+      [1, 1, 1, 1],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+  },
+  {
+    name: "O",
+    shape: [
+      [1, 1],
+      [1, 1],
+    ],
+  },
+  {
+    name: "T",
+    shape: [
+      [0, 1, 0],
+      [1, 1, 1],
+      [0, 0, 0],
+    ],
+  },
+  {
+    name: "S",
+    shape: [
+      [0, 1, 1],
+      [1, 1, 0],
+      [0, 0, 0],
+    ],
+  },
+  {
+    name: "Z",
+    shape: [
+      [1, 1, 0],
+      [0, 1, 1],
+      [0, 0, 0],
+    ],
+  },
+  {
+    name: "J",
+    shape: [
+      [1, 0, 0],
+      [1, 1, 1],
+      [0, 0, 0],
+    ],
+  },
+  {
+    name: "L",
+    shape: [
+      [0, 0, 1],
+      [1, 1, 1],
+      [0, 0, 0],
+    ],
+  },
+];
 
-function rand(min: number, max: number) {
-  return Math.random() * (max - min) + min;
+function rotateCW(shape: number[][]): number[][] {
+  const n = shape.length;
+  const rotated: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let r = 0; r < n; r++)
+    for (let c = 0; c < n; c++)
+      rotated[c][n - 1 - r] = shape[r][c];
+  return rotated;
 }
 
-function randInt(min: number, max: number) {
-  return Math.floor(rand(min, max + 1));
+function randomPiece() {
+  return PIECES[Math.floor(Math.random() * PIECES.length)];
 }
 
-function drawShip(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  for (let row = 0; row < SHIP_H; row++) {
-    for (let col = 0; col < SHIP_W; col++) {
-      const ch = SHIP_SPRITE[row][col];
-      if (!ch) continue;
-      ctx.fillStyle = SHIP_COLORS[ch];
-      ctx.fillRect(x + col * PX, y + row * PX, PX, PX);
-    }
-  }
+type Screen = "start" | "playing" | "gameover";
+
+interface EmptyStatePetProps {
+  onExit?: () => void;
 }
 
-function drawAsteroid(ctx: CanvasRenderingContext2D, a: Asteroid) {
-  const sides = 8 + Math.floor(a.r / 4);
-  const wobble = (t: number) => (Math.sin(t * 3 + a.id) * 0.15 + 1);
-  ctx.fillStyle = ASTEROID_COLORS[a.id % ASTEROID_COLORS.length];
-  ctx.beginPath();
-  for (let i = 0; i <= sides; i++) {
-    const angle = (i / sides) * Math.PI * 2 + a.rot;
-    const rad = a.r * wobble(angle);
-    const px = a.x + Math.cos(angle) * rad;
-    const py = a.y + Math.sin(angle) * rad;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-export default function EmptyStatePet() {
+export default function EmptyStatePet({ onExit }: EmptyStatePetProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const stateRef = useRef<GameState>("playing");
-  const shipXRef = useRef(150);
+  const boardRef = useRef<string[][]>([]);
+  const pieceRef = useRef<{
+    shape: number[][];
+    name: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const nextRef = useRef<{ shape: number[][]; name: string } | null>(null);
   const scoreRef = useRef(0);
-  const livesRef = useRef(3);
-  const invulnRef = useRef(0);
-  const asteroidsRef = useRef<Asteroid[]>([]);
-  const lasersRef = useRef<Laser[]>([]);
-  const particlesRef = useRef<Particle[]>([]);
-  const starsRef = useRef<Star[]>([]);
-  const spawnTimerRef = useRef(0);
-  const shootTimerRef = useRef(0);
-  const mouseXRef = useRef(150);
-  const shootingRef = useRef(false);
-  const dimsRef = useRef({ w: 368, h: 400 });
+  const linesRef = useRef(0);
+  const dropTimerRef = useRef(0);
+  const difficultyRef = useRef<Difficulty>("medium");
+  const screenRef = useRef<Screen>("start");
 
-  const [gameState, setGameState] = useState<GameState>("playing");
+  const lockPieceRef = useRef<() => void>(() => {});
+
+  const [screen, setScreen] = useState<Screen>("start");
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
   useEffect(() => {
-    stateRef.current = gameState;
-  }, [gameState]);
+    screenRef.current = screen;
+  }, [screen]);
 
-  // Resize + init
+  useEffect(() => {
+    difficultyRef.current = difficulty;
+  }, [difficulty]);
+
+  const initBoard = useCallback(() => {
+    boardRef.current = Array.from({ length: BOARD_H }, () =>
+      Array(BOARD_W).fill(""),
+    );
+  }, []);
+
+  const spawnPiece = useCallback(() => {
+    const piece = nextRef.current || randomPiece();
+    nextRef.current = randomPiece();
+    const shape = piece.shape.map((r) => [...r]);
+    pieceRef.current = {
+      shape,
+      name: piece.name,
+      x: Math.floor((BOARD_W - shape[0].length) / 2),
+      y: 0,
+    };
+    if (collides(pieceRef.current.shape, pieceRef.current.x, pieceRef.current.y)) {
+      setScreen("gameover");
+    }
+  }, []);
+
+  function collides(shape: number[][], px: number, py: number): boolean {
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const bx = px + c;
+        const by = py + r;
+        if (bx < 0 || bx >= BOARD_W || by >= BOARD_H) return true;
+        if (by < 0) continue;
+        if (boardRef.current[by]?.[bx]) return true;
+      }
+    }
+    return false;
+  }
+
+  function lockPiece() {
+    const p = pieceRef.current;
+    if (!p) return;
+    for (let r = 0; r < p.shape.length; r++) {
+      for (let c = 0; c < p.shape[r].length; c++) {
+        if (!p.shape[r][c]) continue;
+        const bx = p.x + c;
+        const by = p.y + r;
+        if (by >= 0 && by < BOARD_H && bx >= 0 && bx < BOARD_W) {
+          boardRef.current[by][bx] = p.name;
+        }
+      }
+    }
+    clearLines();
+    spawnPiece();
+  }
+
+  function clearLines() {
+    let cleared = 0;
+    for (let r = BOARD_H - 1; r >= 0; r--) {
+      if (boardRef.current[r].every((c) => c !== "")) {
+        boardRef.current.splice(r, 1);
+        boardRef.current.unshift(Array(BOARD_W).fill(""));
+        cleared++;
+        r++;
+      }
+    }
+    if (cleared > 0) {
+      const points = [0, 100, 300, 500, 800];
+      const add = points[Math.min(cleared, 4)];
+      scoreRef.current += add;
+      linesRef.current += cleared;
+    }
+  }
+
+  // Keep lockPieceRef in sync
+  lockPieceRef.current = lockPiece;
+
+  // Reset
+  const startGame = useCallback(() => {
+    initBoard();
+    scoreRef.current = 0;
+    linesRef.current = 0;
+    dropTimerRef.current = 0;
+    nextRef.current = randomPiece();
+    spawnPiece();
+    setScreen("playing");
+  }, [initBoard, spawnPiece]);
+
+
+
+  // Game loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const loop = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      if (screenRef.current === "playing") {
+        dropTimerRef.current += 16;
+        const interval = DROP_INTERVALS[difficultyRef.current];
+        if (dropTimerRef.current >= interval) {
+          dropTimerRef.current = 0;
+          const p = pieceRef.current;
+          if (p) {
+            if (!collides(p.shape, p.x, p.y + 1)) {
+              p.y++;
+            } else {
+              lockPieceRef.current();
+            }
+          }
+        }
+      }
+
+      // === RENDER ===
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(0, 0, w, h);
+
+      const boardPixelW = BOARD_W * CELL;
+      const boardPixelH = BOARD_H * CELL;
+      const offsetX = 12;
+      const offsetY = 12;
+
+      // Board background
+      ctx.fillStyle = "#1f2937";
+      ctx.fillRect(offsetX, offsetY, boardPixelW, boardPixelH);
+      ctx.strokeStyle = "#374151";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(offsetX, offsetY, boardPixelW, boardPixelH);
+
+      // Grid lines
+      ctx.strokeStyle = "#2d3748";
+      ctx.lineWidth = 0.5;
+      for (let c = 1; c < BOARD_W; c++) {
+        const x = offsetX + c * CELL;
+        ctx.beginPath();
+        ctx.moveTo(x, offsetY);
+        ctx.lineTo(x, offsetY + boardPixelH);
+        ctx.stroke();
+      }
+      for (let r = 1; r < BOARD_H; r++) {
+        const y = offsetY + r * CELL;
+        ctx.beginPath();
+        ctx.moveTo(offsetX, y);
+        ctx.lineTo(offsetX + boardPixelW, y);
+        ctx.stroke();
+      }
+
+      // Placed pieces
+      for (let r = 0; r < BOARD_H; r++) {
+        for (let c = 0; c < BOARD_W; c++) {
+          const name = boardRef.current[r]?.[c];
+          if (!name) continue;
+          ctx.fillStyle = COLORS[name] || "#666";
+          ctx.fillRect(offsetX + c * CELL + 1, offsetY + r * CELL + 1, CELL - 2, CELL - 2);
+          // Highlight
+          ctx.fillStyle = "rgba(255,255,255,0.15)";
+          ctx.fillRect(offsetX + c * CELL + 1, offsetY + r * CELL + 1, CELL - 2, 3);
+        }
+      }
+
+      // Ghost piece
+      if (screenRef.current === "playing" && pieceRef.current) {
+        const p = pieceRef.current;
+        let gy = p.y;
+        while (!collides(p.shape, p.x, gy + 1)) gy++;
+        for (let r = 0; r < p.shape.length; r++) {
+          for (let c = 0; c < p.shape[r].length; c++) {
+            if (!p.shape[r][c]) continue;
+            const bx = p.x + c;
+            const by = gy + r;
+            if (by < 0) continue;
+            ctx.strokeStyle = COLORS[p.name] || "#666";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(offsetX + bx * CELL + 2, offsetY + by * CELL + 2, CELL - 4, CELL - 4);
+          }
+        }
+      }
+
+      // Current piece
+      if (screenRef.current === "playing" && pieceRef.current) {
+        const p = pieceRef.current;
+        for (let r = 0; r < p.shape.length; r++) {
+          for (let c = 0; c < p.shape[r].length; c++) {
+            if (!p.shape[r][c]) continue;
+            const bx = p.x + c;
+            const by = p.y + r;
+            if (by < 0) continue;
+            ctx.fillStyle = COLORS[p.name] || "#666";
+            ctx.fillRect(offsetX + bx * CELL + 1, offsetY + by * CELL + 1, CELL - 2, CELL - 2);
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.fillRect(offsetX + bx * CELL + 1, offsetY + by * CELL + 1, CELL - 2, 3);
+          }
+        }
+      }
+
+      // Side panel
+      const sideX = offsetX + boardPixelW + 16;
+
+      // Score
+      ctx.fillStyle = "#9CA3AF";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("SCORE", sideX, 30);
+      ctx.fillStyle = "#F9FAFB";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(String(scoreRef.current), sideX, 52);
+
+      // Lines
+      ctx.fillStyle = "#9CA3AF";
+      ctx.font = "11px sans-serif";
+      ctx.fillText("LINES", sideX, 80);
+      ctx.fillStyle = "#F9FAFB";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(String(linesRef.current), sideX, 100);
+
+      // Next piece
+      ctx.fillStyle = "#9CA3AF";
+      ctx.font = "11px sans-serif";
+      ctx.fillText("NEXT", sideX, 130);
+
+      if (nextRef.current) {
+        const next = nextRef.current;
+        const previewCell = 14;
+        const previewW = next.shape[0].length * previewCell;
+        const previewH = next.shape.length * previewCell;
+        const px = sideX;
+        const py = 140;
+        ctx.fillStyle = "#1f2937";
+        ctx.fillRect(px, py, previewW + 8, previewH + 8);
+        for (let r = 0; r < next.shape.length; r++) {
+          for (let c = 0; c < next.shape[r].length; c++) {
+            if (!next.shape[r][c]) continue;
+            ctx.fillStyle = COLORS[next.name] || "#666";
+            ctx.fillRect(px + 4 + c * previewCell + 1, py + 4 + r * previewCell + 1, previewCell - 2, previewCell - 2);
+          }
+        }
+      }
+
+      // Start screen
+      if (screenRef.current === "start") {
+        // Button will be rendered by React overlay
+      }
+
+      // Game over overlay
+      if (screenRef.current === "gameover") {
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "#EF5350";
+        ctx.font = "bold 24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", w / 2, h / 2 - 40);
+
+        ctx.fillStyle = "#F9FAFB";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(`Score: ${scoreRef.current}`, w / 2, h / 2);
+
+        ctx.fillStyle = "#9CA3AF";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("Press Enter or click to restart", w / 2, h / 2 + 35);
+      }
+
+      requestAnimationFrame(loop);
+    };
+
+    const raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Canvas resize
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -129,21 +413,6 @@ export default function EmptyStatePet() {
       const h = container.clientHeight;
       canvas.width = w;
       canvas.height = h;
-      dimsRef.current = { w, h };
-      shipXRef.current = w / 2 - (SHIP_W * PX) / 2;
-      mouseXRef.current = shipXRef.current;
-
-      // Init stars
-      const stars: Star[] = [];
-      for (let i = 0; i < 60; i++) {
-        stars.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          speed: 0.3 + Math.random() * 0.8,
-          size: 0.5 + Math.random() * 1.5,
-        });
-      }
-      starsRef.current = stars;
     };
 
     resize();
@@ -152,295 +421,173 @@ export default function EmptyStatePet() {
     return () => ro.disconnect();
   }, []);
 
-  // Game loop
+  // Keyboard
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    function kMoveLeft() {
+      const p = pieceRef.current;
+      if (!p || screenRef.current !== "playing") return;
+      if (!collides(p.shape, p.x - 1, p.y)) p.x--;
+    }
 
-    const loop = () => {
-      const { w, h } = dimsRef.current;
-      if (w <= 0 || h <= 0) return;
+    function kMoveRight() {
+      const p = pieceRef.current;
+      if (!p || screenRef.current !== "playing") return;
+      if (!collides(p.shape, p.x + 1, p.y)) p.x++;
+    }
 
-      if (stateRef.current === "playing") {
-        // Stars
-        for (const s of starsRef.current) {
-          s.y += s.speed;
-          if (s.y > h) { s.y = -2; s.x = Math.random() * w; }
-        }
+    function kMoveDown() {
+      const p = pieceRef.current;
+      if (!p || screenRef.current !== "playing") return;
+      if (!collides(p.shape, p.x, p.y + 1)) p.y++;
+      else lockPieceRef.current();
+    }
 
-        // Spawn asteroids
-        spawnTimerRef.current += 1;
-        const interval = Math.max(300, 800 - Math.min(scoreRef.current, 400));
-        if (spawnTimerRef.current > interval) {
-          spawnTimerRef.current = 0;
-          const r = randInt(12, 24);
-          asteroidsRef.current.push({
-            id: nextId++,
-            x: rand(r, w - r),
-            y: -r,
-            r,
-            speed: rand(0.5, 1.5 + scoreRef.current * 0.002),
-            rot: rand(0, Math.PI * 2),
-          });
-        }
-
-        // Move asteroids
-        for (const a of asteroidsRef.current) {
-          a.y += a.speed;
-          a.rot += 0.02;
-        }
-
-        // Move lasers
-        for (const l of lasersRef.current) {
-          l.y -= 5;
-        }
-
-        // Shooting
-        if (shootingRef.current) {
-          shootTimerRef.current += 1;
-          if (shootTimerRef.current > 5) {
-            shootTimerRef.current = 0;
-            lasersRef.current.push({
-              x: shipXRef.current + (SHIP_W * PX) / 2 - 2,
-              y: h - SHIP_H * PX - 30,
-            });
+    function kRotate() {
+      const p = pieceRef.current;
+      if (!p || screenRef.current !== "playing") return;
+      const rotated = rotateCW(p.shape);
+      if (!collides(rotated, p.x, p.y)) {
+        p.shape = rotated;
+      } else {
+        for (const offset of [-1, 1, -2, 2]) {
+          if (!collides(rotated, p.x + offset, p.y)) {
+            p.shape = rotated;
+            p.x += offset;
+            break;
           }
         }
-
-        // Laser-asteroid collisions
-        const newAsteroids: Asteroid[] = [];
-        const destroyedLasers = new Set<number>();
-
-        for (let ai = 0; ai < asteroidsRef.current.length; ai++) {
-          const a = asteroidsRef.current[ai];
-          let hit = false;
-          for (let li = 0; li < lasersRef.current.length; li++) {
-            const l = lasersRef.current[li];
-            const dx = l.x - a.x;
-            const dy = l.y - a.y;
-            if (dx * dx + dy * dy < a.r * a.r) {
-              hit = true;
-              destroyedLasers.add(li);
-              break;
-            }
-          }
-          if (hit) {
-            // Explosion particles
-            for (let i = 0; i < 12; i++) {
-              const angle = Math.random() * Math.PI * 2;
-              const speed = rand(1, 4);
-              particlesRef.current.push({
-                x: a.x,
-                y: a.y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: 1,
-                color: ASTEROID_COLORS[a.id % ASTEROID_COLORS.length],
-              });
-            }
-            if (a.r > 14) {
-              const r1 = randInt(6, a.r * 0.7);
-              const r2 = randInt(6, a.r * 0.7);
-              newAsteroids.push({ ...a, id: nextId++, r: r1, speed: rand(0.8, 2) });
-              newAsteroids.push({ ...a, id: nextId++, r: r2, speed: rand(0.8, 2) });
-              scoreRef.current += 25;
-            } else if (a.r > 8) {
-              const r1 = randInt(4, 7);
-              const r2 = randInt(4, 7);
-              newAsteroids.push({ ...a, id: nextId++, r: r1, speed: rand(1, 3) });
-              newAsteroids.push({ ...a, id: nextId++, r: r2, speed: rand(1, 3) });
-              scoreRef.current += 50;
-            } else {
-              scoreRef.current += 100;
-            }
-          } else {
-            newAsteroids.push(a);
-          }
-        }
-
-        // Remove hit lasers
-        lasersRef.current = lasersRef.current.filter((_, i) => !destroyedLasers.has(i));
-
-        // Apply split asteroids
-        asteroidsRef.current = newAsteroids;
-
-        // Ship-asteroid collision
-        if (invulnRef.current <= 0) {
-          const cx = shipXRef.current + (SHIP_W * PX) / 2;
-          const cy = dimsRef.current.h - (SHIP_H * PX) / 2 - 30;
-          for (let ai = asteroidsRef.current.length - 1; ai >= 0; ai--) {
-            const a = asteroidsRef.current[ai];
-            const dx = cx - a.x;
-            const dy = cy - a.y;
-            if (dx * dx + dy * dy < (a.r + 12) * (a.r + 12)) {
-              livesRef.current -= 1;
-              invulnRef.current = 90;
-              // Ship explosion
-              for (let i = 0; i < 20; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = rand(2, 6);
-                particlesRef.current.push({
-                  x: cx,
-                  y: cy,
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed,
-                  life: 1,
-                  color: ["#4A90D9", "#FFD700", "#FFF"][i % 3],
-                });
-              }
-              if (livesRef.current <= 0) {
-                setGameState("gameover");
-              }
-              break;
-            }
-          }
-        } else {
-          invulnRef.current -= 1;
-        }
-
-        // Update particles
-        for (const p of particlesRef.current) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= 0.025;
-        }
-
-        // Clean off-screen objects
-        asteroidsRef.current = asteroidsRef.current.filter((a) => a.y < h + a.r + 10);
-        lasersRef.current = lasersRef.current.filter((l) => l.y > -10);
-        particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
       }
+    }
 
-      // === RENDER ===
-      ctx.clearRect(0, 0, w, h);
+    function kHardDrop() {
+      const p = pieceRef.current;
+      if (!p || screenRef.current !== "playing") return;
+      while (!collides(p.shape, p.x, p.y + 1)) p.y++;
+      lockPieceRef.current();
+      dropTimerRef.current = 0;
+    }
 
-      // Dark space background
-      ctx.fillStyle = "#0a0a1a";
-      ctx.fillRect(0, 0, w, h);
-
-      // Stars
-      for (const s of starsRef.current) {
-        ctx.fillStyle = `rgba(255,255,255,${0.3 + s.size * 0.3})`;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fill();
+    const handleKey = (e: KeyboardEvent) => {
+      if (screenRef.current === "start" || screenRef.current === "gameover") {
+        if (e.key === "Enter") {
+          startGame();
+          return;
+        }
       }
+      if (screenRef.current !== "playing") return;
 
-      if (stateRef.current === "playing") {
-        // Asteroids
-        for (const a of asteroidsRef.current) {
-          drawAsteroid(ctx, a);
-        }
-
-        // Lasers
-        for (const l of lasersRef.current) {
-          ctx.fillStyle = "#FF4444";
-          ctx.shadowColor = "#FF4444";
-          ctx.shadowBlur = 4;
-          ctx.fillRect(l.x, l.y, 3, 12);
-          ctx.shadowBlur = 0;
-        }
-
-        // Ship
-        const shipY = h - SHIP_H * PX - 30;
-        if (invulnRef.current <= 0 || Math.floor(invulnRef.current / 5) % 2 === 0) {
-          drawShip(ctx, shipXRef.current, shipY);
-        }
-
-        // Particles
-        for (const p of particlesRef.current) {
-          ctx.globalAlpha = p.life;
-          ctx.fillStyle = p.color;
-          ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-        }
-        ctx.globalAlpha = 1;
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          kMoveLeft();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          kMoveRight();
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          kMoveDown();
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          kRotate();
+          break;
+        case " ":
+          e.preventDefault();
+          kHardDrop();
+          break;
       }
-
-      // HUD
-      ctx.fillStyle = "#FFF";
-      ctx.font = "14px monospace";
-      ctx.textAlign = "left";
-      ctx.fillText("❤".repeat(Math.max(0, livesRef.current)), 12, 22);
-      ctx.textAlign = "right";
-      ctx.fillText(`Score: ${scoreRef.current}`, w - 12, 22);
-
-      // Game over
-      if (stateRef.current === "gameover") {
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.fillStyle = "#FF4444";
-        ctx.font = "bold 28px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", w / 2, h / 2 - 30);
-
-        ctx.fillStyle = "#FFF";
-        ctx.font = "18px monospace";
-        ctx.fillText(`Score: ${scoreRef.current}`, w / 2, h / 2 + 10);
-
-        ctx.font = "12px monospace";
-        ctx.fillStyle = "#888";
-        ctx.fillText("click to restart", w / 2, h / 2 + 45);
-      }
-
-      requestAnimationFrame(loop);
     };
 
-    const raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [startGame]);
 
-  // Mouse tracking
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const { w } = dimsRef.current;
-    let mx = e.clientX - rect.left - (SHIP_W * PX) / 2;
-    mx = Math.max(0, Math.min(mx, w - SHIP_W * PX));
-    shipXRef.current = mx;
-    mouseXRef.current = mx;
-  }, []);
-
-  const handleMouseDown = useCallback(() => {
-    if (stateRef.current === "playing") {
-      shootingRef.current = true;
-      shootTimerRef.current = 10;
+  const handleCanvasClick = () => {
+    if (screenRef.current === "gameover") {
+      startGame();
     }
-  }, []);
+  };
 
-  const handleMouseUp = useCallback(() => {
-    shootingRef.current = false;
-    shootTimerRef.current = 0;
-  }, []);
-
-  const handleClick = useCallback(() => {
-    if (stateRef.current === "gameover") {
-      // Reset
-      scoreRef.current = 0;
-      livesRef.current = 3;
-      invulnRef.current = 0;
-      asteroidsRef.current = [];
-      lasersRef.current = [];
-      particlesRef.current = [];
-      spawnTimerRef.current = 0;
-      shootingRef.current = false;
-      setGameState("playing");
-    }
-  }, []);
+  const difficulties: { key: Difficulty; label: string }[] = [
+    { key: "easy", label: "Easy" },
+    { key: "medium", label: "Medium" },
+    { key: "hard", label: "Hard" },
+  ];
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[300px] overflow-hidden cursor-none select-none"
-      onMouseMove={handleMouseMove}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onClick={handleClick}
+      className="relative flex-1 min-h-0 w-full overflow-hidden select-none bg-[#111827]"
     >
-      <canvas ref={canvasRef} className="absolute inset-0" />
+      {/* Exit button */}
+      {onExit && (
+        <button
+          type="button"
+          onClick={onExit}
+          className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-black/40 text-white/60 hover:text-white hover:bg-black/60 transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      )}
+
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0"
+        onClick={handleCanvasClick}
+      />
+
+      {/* Start screen overlay */}
+      {screen === "start" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#111827]/90 z-10 gap-4 p-6">
+          <h2 className="text-2xl font-bold text-white tracking-wider">
+            TETRIS
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Arrow keys to move &middot; Up to rotate &middot; Space to drop
+          </p>
+          <div className="flex gap-2 mt-1">
+            {difficulties.map((d) => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => setDifficulty(d.key)}
+                className={`px-4 py-1.5 text-sm rounded-lg border transition-all ${
+                  difficulty === d.key
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-ring"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={startGame}
+            className="mt-2 px-8 py-2.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:brightness-110 transition-all"
+          >
+            Start Game
+          </button>
+        </div>
+      )}
+
+      {/* Game over overlay */}
+      {screen === "gameover" && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <button
+            type="button"
+            onClick={startGame}
+            className="pointer-events-auto mt-40 px-6 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:brightness-110 transition-all opacity-0"
+          >
+            Play Again
+          </button>
+        </div>
+      )}
     </div>
   );
 }

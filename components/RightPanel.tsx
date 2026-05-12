@@ -86,7 +86,7 @@ function RightPanelContent({ isMobile }: { isMobile?: boolean }) {
         </div>
       );
     }
-    return <EmptyStatePet />;
+    return <EmptyStatePet onExit={() => setRightPanelMode("day-view")} />;
   }
 
   return (
@@ -272,9 +272,13 @@ export default function RightPanel() {
     <>
       {/* Desktop right panel */}
       <aside className="fixed right-0 top-0 z-30 hidden h-full w-[400px] flex-col border-l border-border bg-right-panel-bg md:flex">
-        <div className="flex-1 overflow-y-auto p-4">
-          <RightPanelContent />
-        </div>
+        {rightPanelMode === "empty" ? (
+          <EmptyStatePet onExit={() => setRightPanelMode("day-view")} />
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4">
+            <RightPanelContent />
+          </div>
+        )}
       </aside>
 
       {/* Mobile bottom sheet */}
