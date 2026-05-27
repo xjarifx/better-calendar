@@ -38,7 +38,7 @@ An AI-powered calendar application built with Next.js 16, TypeScript, and Postgr
 
 ```bash
 git clone <repository-url>
-cd better-calender
+cd better-calendar
 ```
 
 ### 2. Install dependencies
@@ -98,7 +98,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Project Structure
 
 ```
-better-calender/
+better-calendar/
 ├── app/
 │   ├── api/
 │   │   ├── auth/
@@ -178,32 +178,32 @@ The application provides a RESTful API for authentication, event management, and
 
 ### User Model (`users`)
 
-| Field | Type | Default |
-|---|---|---|
-| id | Int (auto-increment) | — |
-| username | VARCHAR(255) unique | — |
-| password | VARCHAR(255) (hashed) | — |
-| apiKey | VARCHAR(255) nullable | — |
-| timeFormat | VARCHAR(10) | `"12h"` |
-| firstDayOfWeek | Int | `0` (Sunday) |
-| tokenVersion | Int | `0` |
-| createdAt | DateTime | `now()` |
+| Field          | Type                  | Default      |
+| -------------- | --------------------- | ------------ |
+| id             | Int (auto-increment)  | —            |
+| username       | VARCHAR(255) unique   | —            |
+| password       | VARCHAR(255) (hashed) | —            |
+| apiKey         | VARCHAR(255) nullable | —            |
+| timeFormat     | VARCHAR(10)           | `"12h"`      |
+| firstDayOfWeek | Int                   | `0` (Sunday) |
+| tokenVersion   | Int                   | `0`          |
+| createdAt      | DateTime              | `now()`      |
 
 ### Event Model (`events`)
 
-| Field | Type | Notes |
-|---|---|---|
-| id | Int (auto-increment) | — |
-| userId | Int | Foreign key → users.id |
-| title | VARCHAR(255) | — |
-| startDate | DateTime | Required |
-| startTime | DateTime? | Nullable (all-day if null) |
-| endDate | DateTime? | Nullable |
-| endTime | DateTime? | Nullable |
-| location | Text? | — |
-| description | Text? | — |
-| createdAt | DateTime | `now()` |
-| updatedAt | DateTime | Auto-updated |
+| Field       | Type                 | Notes                      |
+| ----------- | -------------------- | -------------------------- |
+| id          | Int (auto-increment) | —                          |
+| userId      | Int                  | Foreign key → users.id     |
+| title       | VARCHAR(255)         | —                          |
+| startDate   | DateTime             | Required                   |
+| startTime   | DateTime?            | Nullable (all-day if null) |
+| endDate     | DateTime?            | Nullable                   |
+| endTime     | DateTime?            | Nullable                   |
+| location    | Text?                | —                          |
+| description | Text?                | —                          |
+| createdAt   | DateTime             | `now()`                    |
+| updatedAt   | DateTime             | Auto-updated               |
 
 ## Authentication
 

@@ -828,7 +828,7 @@
   ],
   "externalDocs": {
     "description": "For frontend developers: Key implementation notes",
-    "url": "https://github.com/anomalyco/better-calender#frontend-notes"
+    "url": "https://github.com/anomalyco/better-calendar#frontend-notes"
   },
   "x-frontend-notes": {
     "authentication": {

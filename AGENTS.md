@@ -1,9 +1,11 @@
 # Better Calendar — AI Agent Guide
 
 ## Project Overview
+
 Better Calendar is an AI-powered calendar application built with Next.js 16.2.4 (App Router), TypeScript, Tailwind CSS 4, PostgreSQL with Prisma ORM 7.8.0 (driver adapters), and OpenRouter AI integration.
 
 ## Tech Stack
+
 - **Framework**: Next.js 16.2.4 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4 + shadcn/ui
@@ -14,8 +16,9 @@ Better Calendar is an AI-powered calendar application built with Next.js 16.2.4 
 - **Utilities**: date-fns, lucide-react, @dnd-kit/core, @base-ui/react
 
 ## Project Structure
+
 ```
-better-calender/
+better-calendar/
 ├── app/
 │   ├── api/
 │   │   ├── auth/
@@ -89,6 +92,7 @@ better-calender/
 ## Database Schema
 
 ### `users` Table
+
 ```prisma
 model users {
   id             Int      @id @default(autoincrement())
@@ -104,6 +108,7 @@ model users {
 ```
 
 ### `events` Table
+
 ```prisma
 model events {
   id          Int      @id @default(autoincrement())
@@ -122,6 +127,7 @@ model events {
 ```
 
 ## Environment Variables (.env)
+
 ```
 DATABASE_URL="postgresql://user:password@localhost:5432/better_calendar?sslmode=require&sslaccept=accept_invalid_certs"
 OPENROUTER_API_KEY="sk-or-v1-..."
@@ -130,6 +136,7 @@ NEXT_PUBLIC_APP_URL="https://better-calendar-one.vercel.app"
 ```
 
 ## Common Commands
+
 - `npm run dev` — Start development server
 - `npm run build` — Build for production
 - `npm run start` — Start production server
@@ -155,6 +162,7 @@ NEXT_PUBLIC_APP_URL="https://better-calendar-one.vercel.app"
 - **API Client**: `lib/api.ts` provides both `apiFetch()` for raw requests and an `api` object with typed methods. The `getTokenFromCookie()` parser is used server-side.
 
 ## Development Workflow
+
 1. Copy `.env.example` to `.env` and configure DATABASE_URL, JWT_SECRET, OPENROUTER_API_KEY, NEXT_PUBLIC_APP_URL
 2. Run `npm install` (postinstall generates Prisma client)
 3. Run `npm run db:migrate` to apply database migrations
