@@ -43,7 +43,7 @@ components/           # Reusable UI components
   MobileNav.tsx       # Mobile bottom nav
   RightPanel.tsx      # Event detail panel
   SearchModal.tsx     # Search overlay
-  EmptyStatePet.tsx   # Friendly empty state
+  EmptyStatePet.tsx   # Empty state for right panel
 hooks/                # Custom React hooks
   use-swipe.ts        # Touch swipe handling
 lib/                  # Core library code

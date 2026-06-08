@@ -38,6 +38,20 @@ export default function LoginPage() {
     }
   }
 
+  const handleDemoLogin = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      await api.login('demo', 'demo123')
+      await refreshAuth()
+      router.push('/calendar')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-background px-4 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -129,6 +143,25 @@ export default function LoginPage() {
                     <ArrowRight className="w-4 h-4" />
                   </span>
                 )}
+              </Button>
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/10" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card/60 px-2 text-muted-foreground/50">or</span>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-9 text-sm"
+                onClick={handleDemoLogin}
+                disabled={loading}
+              >
+                <span className="flex items-center gap-2">
+                  Try Demo Account
+                </span>
               </Button>
             </CardFooter>
           </form>
