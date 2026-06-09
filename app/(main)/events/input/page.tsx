@@ -22,7 +22,7 @@ import {
   CheckCircle2,
   FileText,
 } from "lucide-react";
-import { InlineLoading } from "@/components/ui/loading";
+import { InlineLoading, Loading } from "@/components/ui/loading";
 
 const LS_KEY_TEXT = "ai-input-text";
 const LS_KEY_EVENTS = "ai-input-events";
@@ -466,6 +466,15 @@ Feb 20, 2026
             </div>
           </CardContent>
         </Card>
+
+        {/* Loading */}
+        {extracting && extractedEvents.length === 0 && (
+          <Card>
+            <CardContent className="py-12">
+              <Loading text="AI is extracting events..." />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Results */}
         {extractedEvents.length > 0 && (
