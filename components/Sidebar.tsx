@@ -40,7 +40,7 @@ export default function Sidebar() {
           href="/calendar"
           className="flex items-center gap-2 text-sm font-semibold text-foreground"
         >
-          <Calendar className="h-5 w-5 text-primary" />
+          <img src="/calendar.png" alt="Better Calendar" className="h-5 w-5" />
           <span>Better Calendar</span>
         </Link>
       </div>

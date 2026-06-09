@@ -32,19 +32,13 @@ const LS_KEY_REQUEST_ID = "ai-input-request-id";
 let activeController: AbortController | null = null;
 
 const RECOMMENDED_MODEL_IDS = [
-  "openai/gpt-oss-120b",
-  "nvidia/nemotron-3-super",
+  "openrouter/auto",
 ];
 const HARDCODED_RECOMMENDED_MODELS: FreeModel[] = [
   {
-    id: "openai/gpt-oss-120b",
-    name: "OpenAI: gpt-oss-120b",
-    context: "131k",
-  },
-  {
-    id: "nvidia/nemotron-3-super",
-    name: "NVIDIA: Nemotron 3 Super",
-    context: "128k",
+    id: "openrouter/auto",
+    name: "OpenRouter: Free Model Router",
+    context: "Auto",
   },
 ];
 
@@ -380,7 +374,7 @@ export default function EventInputPage() {
         )}
 
         {/* Text input */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
@@ -428,58 +422,26 @@ Feb 20, 2026
                     </button>
 
                     {isDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50">
-                          Recommended
-                        </div>
-                        {models
-                          .filter((m) => RECOMMENDED_MODEL_IDS.includes(m.id))
-                          .map((model) => (
-                            <div
-                              key={model.id}
-                              onClick={() => {
-                                setSelectedModel(model.id);
-                                setIsDropdownOpen(false);
-                              }}
-                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors ${
-                                selectedModel === model.id
-                                  ? "bg-primary/10 font-medium"
-                                  : ""
-                              }`}
-                            >
-                              {model.name}
-                              <span className="text-xs text-muted-foreground ml-2">
-                                ({model.context} context)
-                              </span>
-                            </div>
-                          ))}
-
-                        <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50 border-t border-input">
-                          All AI Models
-                        </div>
-                        {models
-                          .filter(
-                            (m) => !RECOMMENDED_MODEL_IDS.includes(m.id),
-                          )
-                          .map((model) => (
-                            <div
-                              key={model.id}
-                              onClick={() => {
-                                setSelectedModel(model.id);
-                                setIsDropdownOpen(false);
-                              }}
-                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors ${
-                                selectedModel === model.id
-                                  ? "bg-primary/10 font-medium"
-                                  : ""
-                              }`}
-                            >
-                              {model.name}
-                              <span className="text-xs text-muted-foreground ml-2">
-                                ({model.context} context)
-                              </span>
-                            </div>
-                          ))}
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-lg shadow-lg max-h-60 overflow-y-auto dropdown-scrollbar">
+                        {models.map((model) => (
+                          <div
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedModel(model.id);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors ${
+                              selectedModel === model.id
+                                ? "bg-primary/10 font-medium"
+                                : ""
+                            }`}
+                          >
+                            {model.name}
+                            <span className="text-xs text-muted-foreground ml-2">
+                              ({model.context} context)
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

@@ -101,7 +101,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/12 ring-1 ring-primary/20">
-                <Calendar className="w-4 h-4 text-primary" />
+                <img src="/calendar.png" alt="Better Calendar" className="w-5 h-5" />
               </div>
               <span className="text-sm font-semibold text-foreground">Better Calendar</span>
             </Link>
@@ -845,7 +845,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/12 ring-1 ring-primary/20">
-              <Calendar className="w-3.5 h-3.5 text-primary" />
+              <img src="/calendar.png" alt="Better Calendar" className="w-4 h-4" />
             </div>
             <span className="text-sm font-medium text-foreground">Better Calendar</span>
           </div>

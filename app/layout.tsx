@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Better Calendar",
   description: "AI-powered calendar application",
+  icons: {
+    icon: "/calendar.png",
+  },
 };
 
 export default function RootLayout({

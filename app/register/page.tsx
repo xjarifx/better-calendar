@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, Eye, EyeOff, ArrowRight, User, Lock } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, User, Lock } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -56,7 +56,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm animate-slide-up">
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/12 ring-1 ring-primary/20 mb-5 shadow-lg shadow-primary/5">
-            <Calendar className="w-8 h-8 text-primary" />
+            <img src="/calendar.png" alt="Better Calendar" className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Better Calendar</h1>
           <p className="text-sm text-muted-foreground/80 mt-1.5">Get started — create your account</p>
