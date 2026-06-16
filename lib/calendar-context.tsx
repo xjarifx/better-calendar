@@ -24,6 +24,10 @@ interface CalendarContextType {
   navigateToday: () => void;
   firstDayOfWeek: number;
   setFirstDayOfWeek: (day: number) => void;
+  leftSidebarCollapsed: boolean;
+  setLeftSidebarCollapsed: (collapsed: boolean) => void;
+  rightSidebarCollapsed: boolean;
+  setRightSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
@@ -36,6 +40,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [rightPanelMode, setRightPanelMode] =
     useState<RightPanelMode>("empty");
   const [firstDayOfWeek, setFirstDayOfWeek] = useState(0);
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -65,6 +71,10 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         navigateToday,
         firstDayOfWeek,
         setFirstDayOfWeek,
+        leftSidebarCollapsed,
+        setLeftSidebarCollapsed,
+        rightSidebarCollapsed,
+        setRightSidebarCollapsed,
       }}
     >
       {children}

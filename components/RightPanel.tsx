@@ -13,7 +13,8 @@ import {
   DialogContent,
   DialogTitle,
 } from "./ui/dialog";
-import { Plus, ArrowLeft, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Plus, ArrowLeft, X, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 function formatDateTimeInput(value: string | Date | null | undefined) {
   if (!value) return "";
@@ -259,6 +260,8 @@ export default function RightPanel() {
     rightPanelMode,
     setRightPanelMode,
     setSelectedEvent,
+    rightSidebarCollapsed,
+    setRightSidebarCollapsed,
   } = useCalendar();
 
   if (!isAuthenticated) return null;
@@ -271,13 +274,32 @@ export default function RightPanel() {
   return (
     <>
       {/* Desktop right panel */}
-      <aside className="fixed right-0 top-0 z-30 hidden h-full w-[400px] flex-col border-l border-border bg-right-panel-bg md:flex">
-        {rightPanelMode === "empty" ? (
-          <EmptyStatePet onExit={() => setRightPanelMode("day-view")} />
-        ) : (
-          <div className="flex-1 overflow-y-auto p-4">
-            <RightPanelContent />
-          </div>
+      <aside
+        className={cn(
+          "fixed right-0 top-0 z-30 hidden h-full flex-col border-l border-border bg-right-panel-bg md:flex transition-all duration-300",
+          rightSidebarCollapsed ? "w-12" : "w-[400px]"
+        )}
+      >
+        <div className="flex items-center justify-end p-2 border-b border-border">
+          <button
+            onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+            className="text-muted-foreground hover:text-foreground p-1 rounded"
+            aria-label={rightSidebarCollapsed ? "Expand panel" : "Collapse panel"}
+          >
+            {rightSidebarCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+          </button>
+        </div>
+
+        {!rightSidebarCollapsed && (
+          <>
+            {rightPanelMode === "empty" ? (
+              <EmptyStatePet onExit={() => setRightPanelMode("day-view")} />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4">
+                <RightPanelContent />
+              </div>
+            )}
+          </>
         )}
       </aside>
 
